@@ -1,0 +1,32 @@
+# FastAPI Backend
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.23
+aiosqlite==0.19.0
+
+# Data Processing
+pandas==2.0.3
+openpyxl==3.1.2
+numpy==1.24.3
+xlrd==2.0.1
+
+# Security & Privacy
+cryptography==41.0.7
+PyJWT==2.8.0
+passlib[bcrypt]==1.7.4
+pydantic==2.5.2
+pydantic-settings==2.1.0
+
+# API Integration
+httpx==0.25.2
+aiohttp==3.9.1
+
+# Visualization
+matplotlib==3.7.2
+
+# Utilities
+python-dotenv==1.0.0
+loguru==0.7.2
