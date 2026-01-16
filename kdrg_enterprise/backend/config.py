@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
@@ -29,11 +29,21 @@ class Settings(BaseSettings):
     MASK_PATIENT_ID: bool = True
     ENCRYPT_SENSITIVE_DATA: bool = True
     
-    # CORS
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-    ]
+    # CORS 허용 목록
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            if v.startswith("["):
+                import json
+                try:
+                    return json.loads(v)
+                except json.JSONDecodeError:
+                    pass
+            return [x.strip() for x in v.split(",")]
+        return v
     
     # HIRA API Settings (심평원)
     HIRA_API_KEY: Optional[str] = None
@@ -59,13 +69,6 @@ class Settings(BaseSettings):
     MAX_RESULT_PREVIEW: int = 100
     MAX_ERROR_PREVIEW: int = 20
 
-    @field_validator("ALLOWED_ORIGINS", mode="before")
-    @classmethod
-    def parse_allowed_origins(cls, value):
-        if isinstance(value, str):
-            return [v.strip() for v in value.split(",") if v.strip()]
-        return value
-    
     class Config:
         env_file = ".env"
         case_sensitive = True

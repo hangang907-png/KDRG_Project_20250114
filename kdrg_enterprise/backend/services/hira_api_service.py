@@ -83,13 +83,13 @@ class HIRAAPIService:
         # 서비스별 엔드포인트
         self.endpoints = {
             # 신포괄기준정보조회서비스
-            'kdrg_info': '/nkdrgInfoService/getNkdrgInfo',
-            'kdrg_detail': '/nkdrgInfoService/getNkdrgDetailInfo',
-            'kdrg_weight': '/nkdrgInfoService/getNkdrgWeight',
+            'kdrg_info': '/NdrgStdInfoService/getNdrgPayList',
+            'kdrg_detail': '/NdrgStdInfoService/getNdrgPayList', # 상세 기능이 하나뿐이므로 동일하게 설정
+            'kdrg_weight': '/NdrgStdInfoService/getNdrgPayList',
             
             # 병원정보서비스
-            'hospital_list': '/hospInfoService/getHospBasisList',
-            'hospital_detail': '/hospInfoService/getHospBasisInfo',
+            'hospital_list': '/hospInfoServicev2/getHospBasisList',
+            'hospital_detail': '/hospInfoServicev2/getHospBasisInfo',
             
             # DRG 수가정보서비스 (예시)
             'drg_fee': '/drgFeeInfoService/getDrgFeeInfo'
