@@ -58,15 +58,15 @@ export default function OptimizationPage() {
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Data states
   const [summary, setSummary] = useState<any>(null);
   const [statistics, setStatistics] = useState<any>(null);
   const [mdcSummaries, setMdcSummaries] = useState<MDCSummary[]>([]);
   const [topOpportunities, setTopOpportunities] = useState<PatientOptimization[]>([]);
   const [selectedMDC, setSelectedMDC] = useState<string>('');
-  const [mdcList, setMdcList] = useState<{code: string; name: string}[]>([]);
-  
+  const [mdcList, setMdcList] = useState<{ code: string; name: string }[]>([]);
+
   // Report state
   const [reportData, setReportData] = useState<any>(null);
 
@@ -77,14 +77,14 @@ export default function OptimizationPage() {
   const loadInitialData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const [summaryRes, statsRes, mdcRes] = await Promise.all([
         optimizationAPI.summary(),
         optimizationAPI.statistics(),
         optimizationAPI.mdcList(),
       ]);
-      
+
       setSummary(summaryRes.data);
       setStatistics(statsRes.data);
       setMdcList(mdcRes.data);
@@ -98,17 +98,17 @@ export default function OptimizationPage() {
   const runBatchAnalysis = async () => {
     setAnalyzing(true);
     setError(null);
-    
+
     try {
       // 환자 데이터 가져오기
       const patientsRes = await patientsAPI.list({ per_page: 100 });
       const patients = patientsRes.data.items || [];
-      
+
       if (patients.length === 0) {
         setError('분석할 환자 데이터가 없습니다.');
         return;
       }
-      
+
       // 배치 분석 실행
       const analysisRes = await optimizationAPI.analyzeBatch({
         patients: patients.map((p: any) => ({
@@ -124,7 +124,7 @@ export default function OptimizationPage() {
         mdc_filter: selectedMDC || undefined,
         min_potential: 0,
       });
-      
+
       setReportData(analysisRes.data);
       setMdcSummaries(analysisRes.data.mdc_summaries || []);
       setTopOpportunities(analysisRes.data.top_opportunities || []);
@@ -185,21 +185,21 @@ export default function OptimizationPage() {
             전체 MDC에 대한 KDRG 수익성 분석 및 코딩 개선 제안
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <select
             value={selectedMDC}
-            onChange={(e) => setSelectedMDC(e.target.value)}
+            onChange={e => setSelectedMDC(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
           >
             <option value="">전체 MDC</option>
-            {mdcList.map((mdc) => (
+            {mdcList.map(mdc => (
               <option key={mdc.code} value={mdc.code}>
                 {mdc.code} - {mdc.name}
               </option>
             ))}
           </select>
-          
+
           <button
             onClick={runBatchAnalysis}
             disabled={analyzing}
@@ -226,7 +226,7 @@ export default function OptimizationPage() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
@@ -240,7 +240,7 @@ export default function OptimizationPage() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg">
@@ -254,7 +254,7 @@ export default function OptimizationPage() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-100 rounded-lg">
@@ -276,9 +276,7 @@ export default function OptimizationPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold">최적화 분석 결과</h2>
-              <p className="text-primary-100 text-sm mt-1">
-                보고서 ID: {reportData.report_id}
-              </p>
+              <p className="text-primary-100 text-sm mt-1">보고서 ID: {reportData.report_id}</p>
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold">
@@ -287,7 +285,7 @@ export default function OptimizationPage() {
               <p className="text-primary-100 text-sm">총 최적화 잠재력</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-4 gap-4 mt-6">
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-primary-100 text-xs">분석 케이스</p>
@@ -295,11 +293,15 @@ export default function OptimizationPage() {
             </div>
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-primary-100 text-xs">현재 수익</p>
-              <p className="text-xl font-semibold">{formatCurrency(reportData.total_current_revenue)}</p>
+              <p className="text-xl font-semibold">
+                {formatCurrency(reportData.total_current_revenue)}
+              </p>
             </div>
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-primary-100 text-xs">잠재 수익</p>
-              <p className="text-xl font-semibold">{formatCurrency(reportData.total_potential_revenue)}</p>
+              <p className="text-xl font-semibold">
+                {formatCurrency(reportData.total_potential_revenue)}
+              </p>
             </div>
             <div className="bg-white/10 rounded-lg p-3">
               <p className="text-primary-100 text-xs">최적화 비율</p>
@@ -319,17 +321,31 @@ export default function OptimizationPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">MDC</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">분류</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">케이스</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">현재 수익</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">잠재 수익</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">최적화 잠재력</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">최적화율</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    MDC
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    분류
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    케이스
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    현재 수익
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    잠재 수익
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    최적화 잠재력
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    최적화율
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {mdcSummaries.map((mdc) => (
+                {mdcSummaries.map(mdc => (
                   <tr key={mdc.mdc} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center justify-center w-8 h-8 bg-primary-100 text-primary-700 font-semibold rounded-lg">
@@ -337,7 +353,9 @@ export default function OptimizationPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">{mdc.mdc_name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 text-right">{mdc.total_cases}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 text-right">
+                      {mdc.total_cases}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600 text-right">
                       {formatCurrency(mdc.total_current_revenue)}
                     </td>
@@ -345,21 +363,27 @@ export default function OptimizationPage() {
                       {formatCurrency(mdc.total_potential_revenue)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className={clsx(
-                        'text-sm font-medium',
-                        mdc.optimization_potential > 0 ? 'text-green-600' : 'text-gray-500'
-                      )}>
+                      <span
+                        className={clsx(
+                          'text-sm font-medium',
+                          mdc.optimization_potential > 0 ? 'text-green-600' : 'text-gray-500'
+                        )}
+                      >
                         {mdc.optimization_potential > 0 && '+'}
                         {formatCurrency(mdc.optimization_potential)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className={clsx(
-                        'inline-flex px-2 py-1 text-xs font-medium rounded-full',
-                        mdc.optimization_rate >= 50 ? 'bg-green-100 text-green-800' :
-                        mdc.optimization_rate >= 20 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      )}>
+                      <span
+                        className={clsx(
+                          'inline-flex px-2 py-1 text-xs font-medium rounded-full',
+                          mdc.optimization_rate >= 50
+                            ? 'bg-green-100 text-green-800'
+                            : mdc.optimization_rate >= 20
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                        )}
+                      >
                         {mdc.optimization_rate}%
                       </span>
                     </td>
@@ -388,7 +412,8 @@ export default function OptimizationPage() {
                     <div>
                       <p className="font-medium text-gray-900">환자 {opp.patient_id}</p>
                       <p className="text-sm text-gray-500">
-                        현재 KDRG: {opp.current_kdrg} | 현재 수가: {formatCurrency(opp.current_amount)}
+                        현재 KDRG: {opp.current_kdrg} | 현재 수가:{' '}
+                        {formatCurrency(opp.current_amount)}
                       </p>
                     </div>
                   </div>
@@ -398,12 +423,17 @@ export default function OptimizationPage() {
                     </p>
                     {opp.best_suggestion && (
                       <div className="flex items-center gap-2 mt-1">
-                        <span className={clsx(
-                          'px-2 py-0.5 text-xs font-medium rounded',
-                          getRiskBadgeColor(opp.best_suggestion.risk_level)
-                        )}>
-                          {opp.best_suggestion.risk_level === 'low' ? '낮은 위험' :
-                           opp.best_suggestion.risk_level === 'medium' ? '검토 필요' : '주의'}
+                        <span
+                          className={clsx(
+                            'px-2 py-0.5 text-xs font-medium rounded',
+                            getRiskBadgeColor(opp.best_suggestion.risk_level)
+                          )}
+                        >
+                          {opp.best_suggestion.risk_level === 'low'
+                            ? '낮은 위험'
+                            : opp.best_suggestion.risk_level === 'medium'
+                              ? '검토 필요'
+                              : '주의'}
                         </span>
                         <span className="text-xs text-gray-500">
                           {getTypeLabel(opp.best_suggestion.optimization_type)}
@@ -417,9 +447,13 @@ export default function OptimizationPage() {
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <span className="font-medium">{opp.best_suggestion.current_kdrg}</span>
                       <ArrowUpRight className="h-4 w-4 text-green-500" />
-                      <span className="font-medium text-green-700">{opp.best_suggestion.suggested_kdrg}</span>
+                      <span className="font-medium text-green-700">
+                        {opp.best_suggestion.suggested_kdrg}
+                      </span>
                       <span className="text-gray-400">|</span>
-                      <span className="text-green-600">+{opp.best_suggestion.revenue_change_pct}%</span>
+                      <span className="text-green-600">
+                        +{opp.best_suggestion.revenue_change_pct}%
+                      </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">{opp.best_suggestion.rationale}</p>
                   </div>

@@ -8,12 +8,29 @@ from typing import Optional, List, Dict
 import pandas as pd
 import os
 import sys
+import logging
+import re
+import pdfplumber
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import settings
 from api.auth import require_auth, UserInfo
+from services.kdrg_codebook_service import codebook_service
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Valid MDC (Major Diagnostic Category) prefixes for KDRG codes
+# A-V: Standard MDC categories, X: Pre-MDC, Y: Error DRG, Z: Undefined
+VALID_KDRG_MDC_PREFIXES = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+def is_valid_kdrg_code(code: str) -> bool:
+    """Validate if a code matches KDRG format (MDC letter + 4 digits)"""
+    if not code or len(code) != 5:
+        return False
+    if code[0] not in VALID_KDRG_MDC_PREFIXES:
+        return False
+    return code[1:].isdigit()
 
 
 # 모델 정의
@@ -41,8 +58,156 @@ class KDRGValidationResult(BaseModel):
     kdrg_info: Optional[KDRGCode] = None
 
 
-# 인메모리 KDRG 코드북 저장소
+# 인메모리 KDRG 코드북 저장소 (deprecated, DB 사용)
 KDRG_CODEBOOK: List[Dict] = []
+
+
+def parse_pdf_codebook(file_path: str) -> List[Dict]:
+    """
+    PDF 파일에서 KDRG 코드북 데이터 추출
+    심평원 KDRG 코드북 PDF 형식 지원
+    """
+    codes = []
+    
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            logger.info(f"PDF has {len(pdf.pages)} pages")
+            
+            for page_num, page in enumerate(pdf.pages):
+                # 테이블 추출 시도
+                tables = page.extract_tables()
+                
+                for table in tables:
+                    if not table:
+                        continue
+                    
+                    # 헤더 찾기
+                    header_row = None
+                    for i, row in enumerate(table):
+                        if row and any(cell and ('KDRG' in str(cell).upper() or 'DRG' in str(cell).upper()) for cell in row):
+                            header_row = i
+                            break
+                    
+                    if header_row is not None:
+                        headers = [str(h).strip() if h else '' for h in table[header_row]]
+                        logger.info(f"Page {page_num + 1} headers: {headers}")
+                        
+                        # 데이터 행 처리
+                        for row in table[header_row + 1:]:
+                            if not row or all(not cell for cell in row):
+                                continue
+                            
+                            code_data = parse_pdf_row(headers, row)
+                            if code_data and code_data.get('kdrg_code'):
+                                codes.append(code_data)
+                    else:
+                        # 헤더 없이 데이터만 있는 경우 - KDRG 코드 패턴으로 찾기
+                        for row in table:
+                            if not row:
+                                continue
+                            for cell in row:
+                                if cell:
+                                    # KDRG 코드 패턴: 대문자+숫자 5자리 (예: A0110, B2031)
+                                    matches = re.findall(r'\b([A-Z][0-9]{4})\b', str(cell))
+                                    for match in matches:
+                                        if is_valid_kdrg_code(match) and match not in [c['kdrg_code'] for c in codes]:
+                                            codes.append({
+                                                'kdrg_code': match,
+                                                'kdrg_name': '',
+                                                'aadrg_code': match[:3] if len(match) >= 3 else '',
+                                            })
+                
+                # 테이블이 없으면 텍스트에서 추출
+                if not tables:
+                    text = page.extract_text()
+                    if text:
+                        # KDRG 코드 패턴 찾기
+                        matches = re.findall(r'\b([A-Z][0-9]{4})\b', text)
+                        for match in matches:
+                            if is_valid_kdrg_code(match) and match not in [c['kdrg_code'] for c in codes]:
+                                codes.append({
+                                    'kdrg_code': match,
+                                    'kdrg_name': '',
+                                    'aadrg_code': match[:3] if len(match) >= 3 else '',
+                                })
+        
+        logger.info(f"Extracted {len(codes)} codes from PDF")
+        return codes
+        
+    except Exception as e:
+        logger.error(f"PDF parsing error: {e}")
+        raise
+
+
+def parse_pdf_row(headers: List[str], row: List) -> Optional[Dict]:
+    """PDF 테이블 행을 KDRG 코드 딕셔너리로 변환"""
+    if len(row) != len(headers):
+        return None
+    
+    # 컬럼명 매핑
+    column_mapping = {
+        'kdrg_code': ['KDRG', 'kdrg_code', 'KDRG코드', 'kdrg', 'kdrgCd', 'DRG코드', 'DRG'],
+        'kdrg_name': ['KDRG명', 'kdrg_name', 'KDRG_NAME', 'kdrgNm', 'kdrg_nm', 'DRG명', '분류명'],
+        'aadrg_code': ['AADRG', 'aadrg_code', 'AADRG코드', 'aadrg', 'aadrgCd', '인접DRG'],
+        'aadrg_name': ['AADRG명', 'aadrg_name', 'AADRG_NAME', 'aadrgNm'],
+        'mdc_code': ['MDC', 'mdc_code', 'MDC코드', 'mdc', 'mdcCd', '주진단범주'],
+        'mdc_name': ['MDC명', 'mdc_name', 'MDC_NAME', 'mdcNm'],
+        'cc_level': ['CC등급', 'cc_level', 'CC', 'ccLvl', '중증도', '합병증'],
+        'relative_weight': ['상대가치', 'relative_weight', 'RW', 'relWght', '상대가치점수', '가중치'],
+        'geometric_mean_los': ['기하평균재원일수', 'geometric_mean_los', 'geoAvgLos', 'GMLOS', '기하평균'],
+        'arithmetic_mean_los': ['산술평균재원일수', 'arithmetic_mean_los', 'ariAvgLos', 'AMLOS', '평균재원일수', '산술평균'],
+    }
+    
+    def find_col_index(possible_names):
+        for name in possible_names:
+            for i, h in enumerate(headers):
+                if name.lower() in h.lower():
+                    return i
+        return None
+    
+    code = {}
+    
+    # KDRG 코드 찾기 (필수)
+    kdrg_idx = find_col_index(column_mapping['kdrg_code'])
+    if kdrg_idx is None or kdrg_idx >= len(row):
+        # 첫 번째 컬럼이 KDRG 코드 패턴인지 확인
+        if row[0] and re.match(r'^[A-Z][0-9]{4}$', str(row[0]).strip()):
+            code['kdrg_code'] = str(row[0]).strip()
+        else:
+            return None
+    else:
+        val = row[kdrg_idx]
+        if not val or not re.match(r'^[A-Z][0-9]{4}$', str(val).strip()):
+            return None
+        code['kdrg_code'] = str(val).strip()
+    
+    # 나머지 필드
+    for field, possible_names in column_mapping.items():
+        if field == 'kdrg_code':
+            continue
+        idx = find_col_index(possible_names)
+        if idx is not None and idx < len(row) and row[idx]:
+            val = row[idx]
+            if field in ['relative_weight', 'geometric_mean_los', 'arithmetic_mean_los']:
+                try:
+                    code[field] = float(str(val).replace(',', ''))
+                except (ValueError, TypeError):
+                    logger.warning(f"Could not convert '{val}' to float for field '{field}'")
+                    code[field] = 0.0
+            else:
+                code[field] = str(val).strip()
+        else:
+            if field in ['relative_weight', 'geometric_mean_los', 'arithmetic_mean_los']:
+                code[field] = 0.0
+            else:
+                code[field] = ''
+    
+    # AADRG 코드가 없으면 KDRG 앞 3자리로 추정
+    if not code.get('aadrg_code') and code.get('kdrg_code'):
+        code['aadrg_code'] = code['kdrg_code'][:3]
+    
+    return code
+
 
 # 7개 DRG군 정보
 SEVEN_DRG_GROUPS = {
@@ -93,33 +258,21 @@ async def get_kdrg_codebook(
     mdc: Optional[str] = None,
     user: UserInfo = Depends(require_auth)
 ):
-    """KDRG 코드북 조회"""
-    filtered = KDRG_CODEBOOK.copy()
-    
-    if search:
-        search_lower = search.lower()
-        filtered = [
-            k for k in filtered 
-            if search_lower in k.get('kdrg_code', '').lower() 
-            or search_lower in k.get('kdrg_name', '').lower()
-        ]
-    
-    if aadrg:
-        filtered = [k for k in filtered if k.get('aadrg_code', '').startswith(aadrg)]
-    
-    if mdc:
-        filtered = [k for k in filtered if k.get('mdc_code') == mdc]
-    
-    total = len(filtered)
-    start = (page - 1) * per_page
-    end = start + per_page
+    """KDRG 코드북 조회 (DB에서)"""
+    result = codebook_service.get_codebook(
+        page=page,
+        per_page=per_page,
+        search=search,
+        aadrg=aadrg,
+        mdc=mdc
+    )
     
     return {
         "success": True,
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "codes": filtered[start:end]
+        "total": result['total'],
+        "page": result['page'],
+        "per_page": result['per_page'],
+        "codes": result['codes']
     }
 
 
@@ -129,8 +282,7 @@ async def upload_kdrg_codebook(
     version: str = Query(..., description="KDRG 버전 (예: V4.6)"),
     user: UserInfo = Depends(require_auth)
 ):
-    """KDRG 코드북 업로드"""
-    global KDRG_CODEBOOK
+    """KDRG 코드북 업로드 (DB에 저장) - CSV, Excel, PDF 지원"""
     
     if not file.filename:
         raise HTTPException(status_code=400, detail="파일이 필요합니다.")
@@ -142,44 +294,150 @@ async def upload_kdrg_codebook(
         with open(file_path, 'wb') as f:
             f.write(content)
         
-        if file.filename.endswith('.csv'):
-            df = pd.read_csv(file_path, encoding='utf-8')
-        elif file.filename.endswith(('.xlsx', '.xls')):
-            df = pd.read_excel(file_path)
-        else:
-            raise HTTPException(status_code=400, detail="CSV 또는 Excel 파일만 지원합니다.")
-        
-        # 코드북 데이터 파싱
         new_codes = []
-        for _, row in df.iterrows():
-            code = {
-                'kdrg_code': str(row.get('KDRG', row.get('kdrg_code', ''))),
-                'kdrg_name': str(row.get('KDRG명', row.get('kdrg_name', ''))),
-                'aadrg_code': str(row.get('AADRG', row.get('aadrg_code', ''))),
-                'aadrg_name': str(row.get('AADRG명', row.get('aadrg_name', ''))) or None,
-                'mdc_code': str(row.get('MDC', row.get('mdc_code', ''))) or None,
-                'mdc_name': str(row.get('MDC명', row.get('mdc_name', ''))) or None,
-                'cc_level': str(row.get('CC등급', row.get('cc_level', ''))) or None,
-                'relative_weight': float(row.get('상대가치', row.get('relative_weight', 0)) or 0),
-                'avg_los': float(row.get('평균재원일수', row.get('avg_los', 0)) or 0),
-                'version': version
-            }
-            if code['kdrg_code']:
-                new_codes.append(code)
         
-        KDRG_CODEBOOK = new_codes
+        # 파일 형식에 따라 읽기
+        if file.filename.lower().endswith('.pdf'):
+            # PDF 파일 처리
+            logger.info(f"Processing PDF file: {file.filename}")
+            pdf_codes = parse_pdf_codebook(file_path)
+            
+            for code_data in pdf_codes:
+                code_data['version'] = version
+                # 기본값 설정
+                for field in ['kdrg_name', 'aadrg_name', 'mdc_code', 'mdc_name', 'cc_level']:
+                    if field not in code_data:
+                        code_data[field] = ''
+                for field in ['relative_weight', 'geometric_mean_los', 'arithmetic_mean_los']:
+                    if field not in code_data:
+                        code_data[field] = 0.0
+                for field in ['low_trim', 'high_trim']:
+                    if field not in code_data:
+                        code_data[field] = 0
+                new_codes.append(code_data)
+            
+            logger.info(f"PDF parsing complete: {len(new_codes)} codes extracted")
+            
+        elif file.filename.lower().endswith('.csv'):
+            # CSV 파일 처리 - 다양한 인코딩 시도
+            df = None
+            for encoding in ['utf-8', 'cp949', 'euc-kr']:
+                try:
+                    df = pd.read_csv(file_path, encoding=encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if df is None:
+                raise HTTPException(status_code=400, detail="파일 인코딩을 인식할 수 없습니다.")
+            
+            new_codes = parse_dataframe_codebook(df, version)
+            
+        elif file.filename.lower().endswith(('.xlsx', '.xls')):
+            # Excel 파일 처리
+            df = pd.read_excel(file_path)
+            new_codes = parse_dataframe_codebook(df, version)
+            
+        else:
+            raise HTTPException(status_code=400, detail="CSV, Excel, 또는 PDF 파일만 지원합니다.")
+        
+        if not new_codes:
+            raise HTTPException(status_code=400, detail="파일에서 유효한 KDRG 코드를 찾을 수 없습니다. 파일 형식을 확인해주세요.")
+        
+        # DB에 저장
+        saved_count = codebook_service.save_codebook_entries(new_codes)
+        codebook_service.update_sync_metadata(
+            sync_type='kdrg_codebook',
+            total_records=saved_count,
+            status='success',
+            message=f'파일 업로드: {file.filename} ({saved_count}개 코드)'
+        )
+        
+        logger.info(f"KDRG codebook uploaded: {saved_count} codes from {file.filename}")
         
         return {
             "success": True,
-            "message": f"KDRG 코드북 {version}을 업로드했습니다.",
-            "total_codes": len(new_codes)
+            "message": f"KDRG 코드북 {version} 업로드 완료: {saved_count}개 코드가 저장되었습니다.",
+            "total_codes": saved_count,
+            "codebook_status": codebook_service.get_sync_status()
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Codebook upload error: {e}")
         raise HTTPException(status_code=500, detail=f"파일 처리 오류: {str(e)}")
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
+
+
+def parse_dataframe_codebook(df: pd.DataFrame, version: str) -> List[Dict]:
+    """DataFrame에서 KDRG 코드북 데이터 파싱"""
+    logger.info(f"Uploaded file columns: {df.columns.tolist()}")
+    logger.info(f"Total rows: {len(df)}")
+    
+    # 컬럼명 매핑 (다양한 형식 지원)
+    column_mapping = {
+        'kdrg_code': ['KDRG', 'kdrg_code', 'KDRG코드', 'kdrg', 'kdrgCd'],
+        'kdrg_name': ['KDRG명', 'kdrg_name', 'KDRG_NAME', 'kdrgNm', 'kdrg_nm'],
+        'aadrg_code': ['AADRG', 'aadrg_code', 'AADRG코드', 'aadrg', 'aadrgCd'],
+        'aadrg_name': ['AADRG명', 'aadrg_name', 'AADRG_NAME', 'aadrgNm'],
+        'mdc_code': ['MDC', 'mdc_code', 'MDC코드', 'mdc', 'mdcCd'],
+        'mdc_name': ['MDC명', 'mdc_name', 'MDC_NAME', 'mdcNm'],
+        'cc_level': ['CC등급', 'cc_level', 'CC', 'ccLvl', '중증도'],
+        'relative_weight': ['상대가치', 'relative_weight', 'RW', 'relWght', '상대가치점수'],
+        'geometric_mean_los': ['기하평균재원일수', 'geometric_mean_los', 'geoAvgLos', 'GMLOS'],
+        'arithmetic_mean_los': ['산술평균재원일수', 'arithmetic_mean_los', 'ariAvgLos', 'AMLOS', '평균재원일수'],
+        'low_trim': ['하한재원일수', 'low_trim', 'lowTrim', '하한'],
+        'high_trim': ['상한재원일수', 'high_trim', 'highTrim', '상한'],
+    }
+    
+    def find_column(df_cols, possible_names):
+        for name in possible_names:
+            if name in df_cols:
+                return name
+        return None
+    
+    # 코드북 데이터 파싱
+    new_codes = []
+    for _, row in df.iterrows():
+        code = {}
+        
+        # 필수 필드
+        kdrg_col = find_column(df.columns, column_mapping['kdrg_code'])
+        if not kdrg_col or pd.isna(row.get(kdrg_col)):
+            continue
+        
+        code['kdrg_code'] = str(row.get(kdrg_col, '')).strip()
+        if not code['kdrg_code']:
+            continue
+        
+        # 선택 필드
+        for field, possible_cols in column_mapping.items():
+            if field == 'kdrg_code':
+                continue
+            col = find_column(df.columns, possible_cols)
+            if col and not pd.isna(row.get(col)):
+                val = row.get(col)
+                if field in ['relative_weight', 'geometric_mean_los', 'arithmetic_mean_los']:
+                    code[field] = float(val) if val else 0.0
+                elif field in ['low_trim', 'high_trim']:
+                    code[field] = int(val) if val else 0
+                else:
+                    code[field] = str(val).strip() if val else ''
+            else:
+                if field in ['relative_weight', 'geometric_mean_los', 'arithmetic_mean_los']:
+                    code[field] = 0.0
+                elif field in ['low_trim', 'high_trim']:
+                    code[field] = 0
+                else:
+                    code[field] = ''
+        
+        code['version'] = version
+        new_codes.append(code)
+    
+    return new_codes
 
 
 @router.post("/validate", response_model=KDRGValidationResult)
@@ -187,7 +445,7 @@ async def validate_kdrg_code(
     request: KDRGValidationRequest,
     user: UserInfo = Depends(require_auth)
 ):
-    """KDRG 코드 유효성 검증"""
+    """KDRG 코드 유효성 검증 (DB에서)"""
     kdrg_code = request.kdrg_code.upper()
     
     # 형식 검증
@@ -198,39 +456,32 @@ async def validate_kdrg_code(
             message="KDRG 코드는 5자리여야 합니다."
         )
     
-    # 코드북에서 검색
-    found = next((k for k in KDRG_CODEBOOK if k['kdrg_code'] == kdrg_code), None)
+    # DB에서 검증
+    result = codebook_service.validate_kdrg_code(kdrg_code)
     
-    if found:
+    if result['valid'] and result['kdrg_info']:
+        found = result['kdrg_info']
         return KDRGValidationResult(
             valid=True,
             kdrg_code=kdrg_code,
-            message="유효한 KDRG 코드입니다.",
+            message=result['message'],
             kdrg_info=KDRGCode(
-                kdrg_code=found['kdrg_code'],
-                kdrg_name=found['kdrg_name'],
-                aadrg_code=found['aadrg_code'],
+                kdrg_code=found.get('kdrg_code', ''),
+                kdrg_name=found.get('kdrg_name', ''),
+                aadrg_code=found.get('aadrg_code', ''),
                 aadrg_name=found.get('aadrg_name'),
                 mdc_code=found.get('mdc_code'),
                 mdc_name=found.get('mdc_name'),
                 cc_level=found.get('cc_level'),
                 relative_weight=found.get('relative_weight'),
-                avg_los=found.get('avg_los')
+                avg_los=found.get('arithmetic_mean_los')
             )
         )
     
-    # 코드북이 비어있으면 형식만 검증
-    if not KDRG_CODEBOOK:
-        return KDRGValidationResult(
-            valid=True,
-            kdrg_code=kdrg_code,
-            message="코드북이 로드되지 않아 형식만 검증되었습니다."
-        )
-    
     return KDRGValidationResult(
-        valid=False,
+        valid=result['valid'],
         kdrg_code=kdrg_code,
-        message="코드북에서 해당 KDRG 코드를 찾을 수 없습니다."
+        message=result['message']
     )
 
 
@@ -240,16 +491,17 @@ async def get_7drg_info(user: UserInfo = Depends(require_auth)):
     result = []
     
     for code, info in SEVEN_DRG_GROUPS.items():
-        # 코드북에서 해당 AADRG 코드 조회
-        related_codes = [k for k in KDRG_CODEBOOK if k.get('aadrg_code', '').startswith(code)]
+        # DB에서 해당 AADRG 코드 조회
+        related = codebook_service.get_codebook(aadrg=code, per_page=10)
+        related_codes = related.get('codes', [])
         
         result.append({
             'aadrg_code': code,
             'name': info['name'],
             'description': info['description'],
             'conditions': info['conditions'],
-            'kdrg_count': len(related_codes),
-            'related_kdrg': [k['kdrg_code'] for k in related_codes[:5]]  # 최대 5개만
+            'kdrg_count': related.get('total', 0),
+            'related_kdrg': [k['kdrg_code'] for k in related_codes[:5]]
         })
     
     return {
@@ -270,7 +522,7 @@ async def get_7drg_detail(
         raise HTTPException(status_code=404, detail="해당 DRG군을 찾을 수 없습니다.")
     
     info = SEVEN_DRG_GROUPS[aadrg_code]
-    related_codes = [k for k in KDRG_CODEBOOK if k.get('aadrg_code', '').startswith(aadrg_code)]
+    related = codebook_service.get_codebook(aadrg=aadrg_code, per_page=100)
     
     return {
         "success": True,
@@ -279,7 +531,7 @@ async def get_7drg_detail(
             'name': info['name'],
             'description': info['description'],
             'conditions': info['conditions'],
-            'kdrg_codes': related_codes
+            'kdrg_codes': related.get('codes', [])
         }
     }
 
@@ -289,19 +541,12 @@ async def search_kdrg(
     q: str = Query(..., min_length=1, description="검색어"),
     user: UserInfo = Depends(require_auth)
 ):
-    """KDRG 코드/명칭 검색"""
-    q_lower = q.lower()
-    
-    results = [
-        k for k in KDRG_CODEBOOK
-        if q_lower in k.get('kdrg_code', '').lower()
-        or q_lower in k.get('kdrg_name', '').lower()
-        or q_lower in k.get('aadrg_name', '').lower()
-    ]
+    """KDRG 코드/명칭 검색 (DB에서)"""
+    results = codebook_service.search_kdrg(q, limit=50)
     
     return {
         "success": True,
         "query": q,
         "total": len(results),
-        "results": results[:50]  # 최대 50개
+        "results": results
     }

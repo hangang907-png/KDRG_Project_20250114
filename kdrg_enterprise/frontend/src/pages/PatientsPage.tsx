@@ -43,7 +43,7 @@ export default function PatientsPage() {
     queryFn: () =>
       patientsAPI
         .list({ page, per_page: itemsPerPage, department: selectedDept || undefined })
-        .then((res) => res.data),
+        .then(res => res.data),
   });
 
   const importMutation = useMutation({
@@ -81,7 +81,10 @@ export default function PatientsPage() {
     e.stopPropagation();
     setDragActive(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+    if (
+      file &&
+      (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))
+    ) {
       importMutation.mutate(file);
     }
   };
@@ -109,7 +112,11 @@ export default function PatientsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">환자 관리</h1>
           <p className="mt-1 text-gray-600">
-            총 <span className="font-medium text-primary-600">{(data?.total || 0).toLocaleString()}</span>명의 환자 데이터
+            총{' '}
+            <span className="font-medium text-primary-600">
+              {(data?.total || 0).toLocaleString()}
+            </span>
+            명의 환자 데이터
           </p>
         </div>
         <div className="flex gap-3">
@@ -135,7 +142,9 @@ export default function PatientsPage() {
       <div className="card">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
-            <label htmlFor="search" className="sr-only">검색</label>
+            <label htmlFor="search" className="sr-only">
+              검색
+            </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -143,7 +152,7 @@ export default function PatientsPage() {
                 type="text"
                 placeholder="환자명, KDRG 코드, 진료과 검색..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={e => setSearch(e.target.value)}
                 className="input pl-10"
                 aria-label="환자 검색"
               />
@@ -159,11 +168,13 @@ export default function PatientsPage() {
             </div>
           </div>
           <div>
-            <label htmlFor="department" className="sr-only">진료과 선택</label>
+            <label htmlFor="department" className="sr-only">
+              진료과 선택
+            </label>
             <select
               id="department"
               value={selectedDept}
-              onChange={(e) => {
+              onChange={e => {
                 setSelectedDept(e.target.value);
                 setPage(1);
               }}
@@ -213,8 +224,8 @@ export default function PatientsPage() {
                 </tr>
               ) : filteredPatients?.length > 0 ? (
                 filteredPatients.map((patient: Patient) => (
-                  <tr 
-                    key={patient.id} 
+                  <tr
+                    key={patient.id}
                     className="table-row-interactive group"
                     tabIndex={0}
                     role="button"
@@ -230,9 +241,7 @@ export default function PatientsPage() {
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {patient.department || '-'}
-                    </td>
+                    <td className="px-6 py-4 text-gray-600">{patient.department || '-'}</td>
                     <td className="px-6 py-4">
                       <code className="text-sm bg-gray-100 px-2 py-1 rounded font-mono">
                         {patient.kdrg_code || '-'}
@@ -247,9 +256,7 @@ export default function PatientsPage() {
                       {patient.length_of_stay ? `${patient.length_of_stay}일` : '-'}
                     </td>
                     <td className="px-6 py-4 text-gray-900 font-medium">
-                      {patient.claim_amount
-                        ? `₩${patient.claim_amount.toLocaleString()}`
-                        : '-'}
+                      {patient.claim_amount ? `₩${patient.claim_amount.toLocaleString()}` : '-'}
                     </td>
                   </tr>
                 ))
@@ -316,9 +323,10 @@ export default function PatientsPage() {
         ) : (
           <>
             <p className="text-gray-600 mb-6">
-              환자 데이터가 포함된 <strong>CSV</strong> 또는 <strong>Excel</strong> 파일을 업로드하세요.
+              환자 데이터가 포함된 <strong>CSV</strong> 또는 <strong>Excel</strong> 파일을
+              업로드하세요.
             </p>
-            
+
             {/* Drag and Drop Zone */}
             <div
               onDragEnter={handleDrag}
@@ -341,15 +349,15 @@ export default function PatientsPage() {
                 className="hidden"
                 disabled={importMutation.isPending}
               />
-              
+
               <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <FileUp className={clsx('h-6 w-6', dragActive ? 'text-primary-600' : 'text-gray-400')} />
+                <FileUp
+                  className={clsx('h-6 w-6', dragActive ? 'text-primary-600' : 'text-gray-400')}
+                />
               </div>
-              
-              <p className="text-gray-600 mb-2">
-                파일을 여기에 끌어다 놓거나
-              </p>
-              
+
+              <p className="text-gray-600 mb-2">파일을 여기에 끌어다 놓거나</p>
+
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={importMutation.isPending}
@@ -364,10 +372,8 @@ export default function PatientsPage() {
                   '파일 선택'
                 )}
               </button>
-              
-              <p className="text-sm text-gray-400 mt-4">
-                지원 형식: .csv, .xlsx, .xls (최대 10MB)
-              </p>
+
+              <p className="text-sm text-gray-400 mt-4">지원 형식: .csv, .xlsx, .xls (최대 10MB)</p>
             </div>
 
             {importMutation.isError && (
@@ -375,9 +381,7 @@ export default function PatientsPage() {
                 <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-red-800">업로드 실패</p>
-                  <p className="text-sm text-red-600">
-                    파일 형식을 확인하고 다시 시도해주세요.
-                  </p>
+                  <p className="text-sm text-red-600">파일 형식을 확인하고 다시 시도해주세요.</p>
                 </div>
               </div>
             )}

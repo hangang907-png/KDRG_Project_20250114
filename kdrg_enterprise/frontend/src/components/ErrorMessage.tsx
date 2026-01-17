@@ -60,10 +60,7 @@ export default function ErrorMessage({
           )}
         </div>
         {onDismiss && (
-          <button
-            onClick={onDismiss}
-            className="p-1 text-red-400 hover:text-red-600 rounded"
-          >
+          <button onClick={onDismiss} className="p-1 text-red-400 hover:text-red-600 rounded">
             <X className="h-4 w-4" />
           </button>
         )}

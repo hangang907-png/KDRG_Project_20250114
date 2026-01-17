@@ -1,13 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analysisAPI } from '../services/api';
-import {
-  TrendingUp,
-  AlertTriangle,
-  DollarSign,
-  Filter,
-  Download,
-} from 'lucide-react';
+import { TrendingUp, AlertTriangle, DollarSign, Filter, Download } from 'lucide-react';
 import clsx from 'clsx';
 
 interface OptimizationItem {
@@ -35,24 +29,20 @@ export default function AnalysisPage() {
   const { data: optimizeData, isLoading: optimizeLoading } = useQuery({
     queryKey: ['batchOptimize', department],
     queryFn: () =>
-      analysisAPI
-        .batchOptimize({ department: department || undefined })
-        .then((res) => res.data),
+      analysisAPI.batchOptimize({ department: department || undefined }).then(res => res.data),
     enabled: activeTab === 'optimize',
   });
 
   const { data: lossesData, isLoading: lossesLoading } = useQuery({
     queryKey: ['batchLosses', department],
     queryFn: () =>
-      analysisAPI
-        .batchLosses({ department: department || undefined })
-        .then((res) => res.data),
+      analysisAPI.batchLosses({ department: department || undefined }).then(res => res.data),
     enabled: activeTab === 'losses',
   });
 
   const { data: revenueData, isLoading: revenueLoading } = useQuery({
     queryKey: ['revenue'],
-    queryFn: () => analysisAPI.revenue().then((res) => res.data),
+    queryFn: () => analysisAPI.revenue().then(res => res.data),
     enabled: activeTab === 'revenue',
   });
 
@@ -72,14 +62,12 @@ export default function AnalysisPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">분석</h1>
-          <p className="mt-1 text-gray-600">
-            DRG 최적화 및 손실 분석
-          </p>
+          <p className="mt-1 text-gray-600">DRG 최적화 및 손실 분석</p>
         </div>
         <div className="flex gap-3">
           <select
             value={department}
-            onChange={(e) => setDepartment(e.target.value)}
+            onChange={e => setDepartment(e.target.value)}
             className="input w-48"
           >
             <option value="">전체 진료과</option>
@@ -102,7 +90,7 @@ export default function AnalysisPage() {
             { id: 'optimize', label: '최적화 분석', icon: TrendingUp },
             { id: 'losses', label: '손실 감지', icon: AlertTriangle },
             { id: 'revenue', label: '수익 분석', icon: DollarSign },
-          ].map((tab) => (
+          ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
@@ -166,9 +154,7 @@ export default function AnalysisPage() {
                   <div key={item.patient_id} className="p-4 hover:bg-gray-50">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">
-                          {item.masked_name}
-                        </p>
+                        <p className="font-medium text-gray-900">{item.masked_name}</p>
                         <p className="text-sm text-gray-600">
                           {item.current_kdrg} → {item.recommended_kdrg}
                         </p>
@@ -184,9 +170,7 @@ export default function AnalysisPage() {
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center text-gray-500">
-                최적화 대상이 없습니다
-              </div>
+              <div className="p-8 text-center text-gray-500">최적화 대상이 없습니다</div>
             )}
           </div>
         </div>
@@ -237,21 +221,14 @@ export default function AnalysisPage() {
                             alert.alert_level === 'critical'
                               ? 'text-danger-500'
                               : alert.alert_level === 'warning'
-                              ? 'text-warning-500'
-                              : 'text-primary-500'
+                                ? 'text-warning-500'
+                                : 'text-primary-500'
                           )}
                         />
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-900">
-                              {alert.masked_name}
-                            </p>
-                            <span
-                              className={clsx(
-                                'badge',
-                                getAlertLevelBadge(alert.alert_level)
-                              )}
-                            >
+                            <p className="font-medium text-gray-900">{alert.masked_name}</p>
+                            <span className={clsx('badge', getAlertLevelBadge(alert.alert_level))}>
                               {alert.alert_level}
                             </span>
                           </div>
@@ -269,9 +246,7 @@ export default function AnalysisPage() {
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center text-gray-500">
-                손실 경고가 없습니다
-              </div>
+              <div className="p-8 text-center text-gray-500">손실 경고가 없습니다</div>
             )}
           </div>
         </div>
@@ -311,16 +286,14 @@ export default function AnalysisPage() {
               <div className="card">
                 <h3 className="font-semibold text-gray-900 mb-4">DRG군별 수익</h3>
                 <div className="space-y-3">
-                  {Object.entries(revenueData?.revenue?.by_drg_group || {}).map(
-                    ([drg, amount]) => (
-                      <div key={drg} className="flex items-center justify-between">
-                        <span className="text-gray-600">{drg}</span>
-                        <span className="font-medium text-gray-900">
-                          ₩{((amount as number) / 10000).toFixed(0)}만
-                        </span>
-                      </div>
-                    )
-                  )}
+                  {Object.entries(revenueData?.revenue?.by_drg_group || {}).map(([drg, amount]) => (
+                    <div key={drg} className="flex items-center justify-between">
+                      <span className="text-gray-600">{drg}</span>
+                      <span className="font-medium text-gray-900">
+                        ₩{((amount as number) / 10000).toFixed(0)}만
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 

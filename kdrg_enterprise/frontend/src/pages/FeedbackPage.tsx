@@ -88,7 +88,16 @@ const DATA_TYPE_LABELS: Record<string, string> = {
   unknown: '알 수 없음',
 };
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+const COLORS = [
+  '#3B82F6',
+  '#10B981',
+  '#F59E0B',
+  '#EF4444',
+  '#8B5CF6',
+  '#EC4899',
+  '#06B6D4',
+  '#84CC16',
+];
 
 export default function FeedbackPage() {
   const [files, setFiles] = useState<FeedbackFile[]>([]);
@@ -102,7 +111,10 @@ export default function FeedbackPage() {
   const [drg7Summary, setDrg7Summary] = useState<any>(null);
   const [kdrChanges, setKdrgChanges] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'files' | 'analysis' | 'compare' | 'portal'>('files');
-  const [compareFiles, setCompareFiles] = useState<{ claim: string; review: string }>({ claim: '', review: '' });
+  const [compareFiles, setCompareFiles] = useState<{ claim: string; review: string }>({
+    claim: '',
+    review: '',
+  });
   const [compareResult, setCompareResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -298,7 +310,9 @@ export default function FeedbackPage() {
       if (response.data.success) {
         fetchFiles();
         fetchStatistics();
-        alert(`파일 업로드 성공!\n- 데이터 유형: ${DATA_TYPE_LABELS[response.data.data_type]}\n- 총 ${response.data.total_records}건`);
+        alert(
+          `파일 업로드 성공!\n- 데이터 유형: ${DATA_TYPE_LABELS[response.data.data_type]}\n- 총 ${response.data.total_records}건`
+        );
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || '파일 업로드에 실패했습니다.');
@@ -406,7 +420,7 @@ export default function FeedbackPage() {
             { id: 'analysis', label: '분석', icon: BarChart3 },
             { id: 'compare', label: '비교 분석', icon: GitCompare },
             { id: 'portal', label: '자동 다운로드', icon: Cloud },
-          ].map((tab) => (
+          ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
@@ -438,12 +452,18 @@ export default function FeedbackPage() {
                   className="hidden"
                   disabled={uploading}
                 />
-                <span className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
-                  uploading
-                    ? 'bg-gray-100 text-gray-400'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                }`}>
-                  {uploading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                <span
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                    uploading
+                      ? 'bg-gray-100 text-gray-400'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  {uploading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
                   업로드
                 </span>
               </label>
@@ -461,7 +481,7 @@ export default function FeedbackPage() {
               </div>
             ) : (
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {files.map((file) => (
+                {files.map(file => (
                   <div
                     key={file.file_id}
                     onClick={() => handleFileSelect(file)}
@@ -473,20 +493,24 @@ export default function FeedbackPage() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-gray-900 truncate">{file.file_name}</p>
+                        <p className="font-medium text-sm text-gray-900 truncate">
+                          {file.file_name}
+                        </p>
                         <p className="text-xs text-gray-500 mt-1">
                           {DATA_TYPE_LABELS[file.data_type]} · {file.total_records}건
                         </p>
                         {file.summary.adjustment_rate !== undefined && (
-                          <p className={`text-xs mt-1 ${
-                            file.summary.adjustment_rate > 0 ? 'text-red-600' : 'text-green-600'
-                          }`}>
+                          <p
+                            className={`text-xs mt-1 ${
+                              file.summary.adjustment_rate > 0 ? 'text-red-600' : 'text-green-600'
+                            }`}
+                          >
                             조정률: {file.summary.adjustment_rate}%
                           </p>
                         )}
                       </div>
                       <button
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           handleFileDelete(file.file_id);
                         }}
@@ -512,7 +536,8 @@ export default function FeedbackPage() {
                     <span>레코드: {selectedFile.total_records}건</span>
                     {selectedFile.summary.date_range && (
                       <span>
-                        기간: {selectedFile.summary.date_range.start} ~ {selectedFile.summary.date_range.end}
+                        기간: {selectedFile.summary.date_range.start} ~{' '}
+                        {selectedFile.summary.date_range.end}
                       </span>
                     )}
                   </div>
@@ -589,17 +614,26 @@ export default function FeedbackPage() {
                           {selectedFile.data_type === 'review_result' && (
                             <>
                               <td className="px-3 py-2 font-mono">{record.original_kdrg}</td>
-                              <td className={`px-3 py-2 font-mono ${
-                                record.original_kdrg !== record.reviewed_kdrg ? 'text-red-600 font-semibold' : ''
-                              }`}>
+                              <td
+                                className={`px-3 py-2 font-mono ${
+                                  record.original_kdrg !== record.reviewed_kdrg
+                                    ? 'text-red-600 font-semibold'
+                                    : ''
+                                }`}
+                              >
                                 {record.reviewed_kdrg}
                               </td>
-                              <td className={`px-3 py-2 text-right ${
-                                (record.adjustment_amount || 0) > 0 ? 'text-red-600' : ''
-                              }`}>
+                              <td
+                                className={`px-3 py-2 text-right ${
+                                  (record.adjustment_amount || 0) > 0 ? 'text-red-600' : ''
+                                }`}
+                              >
                                 {formatAmount(record.adjustment_amount || 0)}
                               </td>
-                              <td className="px-3 py-2 max-w-[200px] truncate" title={record.adjustment_reason}>
+                              <td
+                                className="px-3 py-2 max-w-[200px] truncate"
+                                title={record.adjustment_reason}
+                              >
                                 {record.adjustment_reason}
                               </td>
                             </>
@@ -618,7 +652,7 @@ export default function FeedbackPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        setRecordsPage((p) => p - 1);
+                        setRecordsPage(p => p - 1);
                         fetchFileRecords(selectedFile.file_id, recordsPage - 1);
                       }}
                       disabled={recordsPage <= 1}
@@ -628,7 +662,7 @@ export default function FeedbackPage() {
                     </button>
                     <button
                       onClick={() => {
-                        setRecordsPage((p) => p + 1);
+                        setRecordsPage(p => p + 1);
                         fetchFileRecords(selectedFile.file_id, recordsPage + 1);
                       }}
                       disabled={recordsPage >= totalPages}
@@ -660,7 +694,9 @@ export default function FeedbackPage() {
             </div>
             <div className="bg-white rounded-lg shadow p-4">
               <p className="text-sm text-gray-500">총 레코드</p>
-              <p className="text-2xl font-bold">{statistics?.total_records?.toLocaleString() || 0}건</p>
+              <p className="text-2xl font-bold">
+                {statistics?.total_records?.toLocaleString() || 0}건
+              </p>
             </div>
             <div className="bg-white rounded-lg shadow p-4">
               <p className="text-sm text-gray-500">총 청구액</p>
@@ -670,9 +706,11 @@ export default function FeedbackPage() {
             </div>
             <div className="bg-white rounded-lg shadow p-4">
               <p className="text-sm text-gray-500">전체 조정률</p>
-              <p className={`text-2xl font-bold ${
-                (statistics?.overall_adjustment_rate || 0) > 0 ? 'text-red-600' : 'text-green-600'
-              }`}>
+              <p
+                className={`text-2xl font-bold ${
+                  (statistics?.overall_adjustment_rate || 0) > 0 ? 'text-red-600' : 'text-green-600'
+                }`}
+              >
                 {statistics?.overall_adjustment_rate || 0}%
               </p>
             </div>
@@ -717,7 +755,10 @@ export default function FeedbackPage() {
                   {Object.entries(drg7Summary)
                     .filter(([code]) => code !== 'OTHER')
                     .map(([code, data]: [string, any]) => (
-                      <div key={code} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div
+                        key={code}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                      >
                         <div>
                           <span className="font-mono font-semibold">{code}</span>
                           <span className="text-sm text-gray-600 ml-2">{data.name}</span>
@@ -777,16 +818,18 @@ export default function FeedbackPage() {
             <h3 className="font-semibold mb-4">청구 vs 심사 결과 비교</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">청구 데이터 파일</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  청구 데이터 파일
+                </label>
                 <select
                   value={compareFiles.claim}
-                  onChange={(e) => setCompareFiles((prev) => ({ ...prev, claim: e.target.value }))}
+                  onChange={e => setCompareFiles(prev => ({ ...prev, claim: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2"
                 >
                   <option value="">선택하세요</option>
                   {files
-                    .filter((f) => f.data_type === 'drg_claim')
-                    .map((f) => (
+                    .filter(f => f.data_type === 'drg_claim')
+                    .map(f => (
                       <option key={f.file_id} value={f.file_id}>
                         {f.file_name}
                       </option>
@@ -794,16 +837,18 @@ export default function FeedbackPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">심사 결과 파일</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  심사 결과 파일
+                </label>
                 <select
                   value={compareFiles.review}
-                  onChange={(e) => setCompareFiles((prev) => ({ ...prev, review: e.target.value }))}
+                  onChange={e => setCompareFiles(prev => ({ ...prev, review: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2"
                 >
                   <option value="">선택하세요</option>
                   {files
-                    .filter((f) => f.data_type === 'review_result')
-                    .map((f) => (
+                    .filter(f => f.data_type === 'review_result')
+                    .map(f => (
                       <option key={f.file_id} value={f.file_id}>
                         {f.file_name}
                       </option>
@@ -836,11 +881,15 @@ export default function FeedbackPage() {
                 </div>
                 <div className="p-3 bg-yellow-50 rounded-lg">
                   <p className="text-xs text-yellow-600">KDRG 변경</p>
-                  <p className="text-lg font-semibold">{compareResult.kdrg_changed?.length || 0}건</p>
+                  <p className="text-lg font-semibold">
+                    {compareResult.kdrg_changed?.length || 0}건
+                  </p>
                 </div>
                 <div className="p-3 bg-red-50 rounded-lg">
                   <p className="text-xs text-red-600">조정률</p>
-                  <p className="text-lg font-semibold">{compareResult.statistics?.avg_adjustment_rate || 0}%</p>
+                  <p className="text-lg font-semibold">
+                    {compareResult.statistics?.avg_adjustment_rate || 0}%
+                  </p>
                 </div>
               </div>
 
@@ -864,7 +913,9 @@ export default function FeedbackPage() {
                             <td className="px-3 py-2">{item.claim_id}</td>
                             <td className="px-3 py-2">{item.patient_id}</td>
                             <td className="px-3 py-2 font-mono">{item.original_kdrg}</td>
-                            <td className="px-3 py-2 font-mono text-red-600">{item.reviewed_kdrg}</td>
+                            <td className="px-3 py-2 font-mono text-red-600">
+                              {item.reviewed_kdrg}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -887,7 +938,9 @@ export default function FeedbackPage() {
                 <Cloud className="w-6 h-6 text-blue-600" />
                 <h2 className="font-semibold text-gray-900">요양기관업무포털 연동</h2>
                 {portalStatus?.is_simulation && (
-                  <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded">시뮬레이션 모드</span>
+                  <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded">
+                    시뮬레이션 모드
+                  </span>
                 )}
               </div>
               <button
@@ -905,7 +958,9 @@ export default function FeedbackPage() {
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <div>
                     <p className="font-medium text-green-800">포털 연결됨</p>
-                    <p className="text-sm text-green-600">요양기관: {portalStatus?.hospital_code || '-'}</p>
+                    <p className="text-sm text-green-600">
+                      요양기관: {portalStatus?.hospital_code || '-'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -939,26 +994,33 @@ export default function FeedbackPage() {
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-700">
                     <Info className="w-4 h-4 inline mr-1" />
-                    심평원 요양기관업무포털(biz.hira.or.kr)에 로그인하여 환류파일을 자동으로 다운로드할 수 있습니다.
+                    심평원 요양기관업무포털(biz.hira.or.kr)에 로그인하여 환류파일을 자동으로
+                    다운로드할 수 있습니다.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">요양기관번호</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      요양기관번호
+                    </label>
                     <input
                       type="text"
                       value={loginForm.hospital_code}
-                      onChange={(e) => setLoginForm((prev) => ({ ...prev, hospital_code: e.target.value }))}
+                      onChange={e =>
+                        setLoginForm(prev => ({ ...prev, hospital_code: e.target.value }))
+                      }
                       placeholder="12345678"
                       className="w-full border rounded-lg px-3 py-2"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">사용자 ID</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      사용자 ID
+                    </label>
                     <input
                       type="text"
                       value={loginForm.user_id}
-                      onChange={(e) => setLoginForm((prev) => ({ ...prev, user_id: e.target.value }))}
+                      onChange={e => setLoginForm(prev => ({ ...prev, user_id: e.target.value }))}
                       placeholder="user_id"
                       className="w-full border rounded-lg px-3 py-2"
                     />
@@ -968,7 +1030,7 @@ export default function FeedbackPage() {
                     <input
                       type="password"
                       value={loginForm.password}
-                      onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
+                      onChange={e => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
                       placeholder="••••••••"
                       className="w-full border rounded-lg px-3 py-2"
                     />
@@ -1025,9 +1087,9 @@ export default function FeedbackPage() {
                           <input
                             type="checkbox"
                             checked={selectedPortalFiles.length === portalFiles.length}
-                            onChange={(e) => {
+                            onChange={e => {
                               if (e.target.checked) {
-                                setSelectedPortalFiles(portalFiles.map((f) => f.file_id));
+                                setSelectedPortalFiles(portalFiles.map(f => f.file_id));
                               } else {
                                 setSelectedPortalFiles([]);
                               }
@@ -1043,17 +1105,19 @@ export default function FeedbackPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {portalFiles.map((file) => (
+                      {portalFiles.map(file => (
                         <tr key={file.file_id} className="hover:bg-gray-50">
                           <td className="px-3 py-2">
                             <input
                               type="checkbox"
                               checked={selectedPortalFiles.includes(file.file_id)}
-                              onChange={(e) => {
+                              onChange={e => {
                                 if (e.target.checked) {
-                                  setSelectedPortalFiles((prev) => [...prev, file.file_id]);
+                                  setSelectedPortalFiles(prev => [...prev, file.file_id]);
                                 } else {
-                                  setSelectedPortalFiles((prev) => prev.filter((id) => id !== file.file_id));
+                                  setSelectedPortalFiles(prev =>
+                                    prev.filter(id => id !== file.file_id)
+                                  );
                                 }
                               }}
                               className="rounded"
@@ -1062,14 +1126,22 @@ export default function FeedbackPage() {
                           <td className="px-3 py-2 font-medium">{file.file_name}</td>
                           <td className="px-3 py-2">{file.file_type}</td>
                           <td className="px-3 py-2">{file.file_date}</td>
-                          <td className="px-3 py-2 text-right">{(file.file_size / 1024).toFixed(0)} KB</td>
+                          <td className="px-3 py-2 text-right">
+                            {(file.file_size / 1024).toFixed(0)} KB
+                          </td>
                           <td className="px-3 py-2 text-center">
                             {file.is_new ? (
-                              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">신규</span>
+                              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">
+                                신규
+                              </span>
                             ) : file.downloaded ? (
-                              <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">다운로드됨</span>
+                              <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                                다운로드됨
+                              </span>
                             ) : (
-                              <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">대기</span>
+                              <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">
+                                대기
+                              </span>
                             )}
                           </td>
                         </tr>
@@ -1104,7 +1176,10 @@ export default function FeedbackPage() {
             ) : (
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {downloadHistory.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
                       {item.success ? (
                         <CheckCircle className="w-5 h-5 text-green-600" />
@@ -1133,7 +1208,10 @@ export default function FeedbackPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-lg">자동 다운로드 설정</h3>
-              <button onClick={() => setShowConfigModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => setShowConfigModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1142,7 +1220,7 @@ export default function FeedbackPage() {
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-gray-700">자동 다운로드 활성화</label>
                 <button
-                  onClick={() => setPortalConfig((prev) => ({ ...prev, enabled: !prev.enabled }))}
+                  onClick={() => setPortalConfig(prev => ({ ...prev, enabled: !prev.enabled }))}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     portalConfig.enabled ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
@@ -1160,27 +1238,40 @@ export default function FeedbackPage() {
                 <input
                   type="time"
                   value={portalConfig.schedule_time}
-                  onChange={(e) => setPortalConfig((prev) => ({ ...prev, schedule_time: e.target.value }))}
+                  onChange={e =>
+                    setPortalConfig(prev => ({ ...prev, schedule_time: e.target.value }))
+                  }
                   className="w-full border rounded-lg px-3 py-2"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">다운로드 경로</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  다운로드 경로
+                </label>
                 <input
                   type="text"
                   value={portalConfig.download_path}
-                  onChange={(e) => setPortalConfig((prev) => ({ ...prev, download_path: e.target.value }))}
+                  onChange={e =>
+                    setPortalConfig(prev => ({ ...prev, download_path: e.target.value }))
+                  }
                   className="w-full border rounded-lg px-3 py-2"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">파일 보관 기간 (일)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  파일 보관 기간 (일)
+                </label>
                 <input
                   type="number"
                   value={portalConfig.days_to_keep}
-                  onChange={(e) => setPortalConfig((prev) => ({ ...prev, days_to_keep: parseInt(e.target.value) || 90 }))}
+                  onChange={e =>
+                    setPortalConfig(prev => ({
+                      ...prev,
+                      days_to_keep: parseInt(e.target.value) || 90,
+                    }))
+                  }
                   min="1"
                   max="365"
                   className="w-full border rounded-lg px-3 py-2"
@@ -1190,7 +1281,9 @@ export default function FeedbackPage() {
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-gray-700">다운로드 후 자동 파싱</label>
                 <button
-                  onClick={() => setPortalConfig((prev) => ({ ...prev, auto_parse: !prev.auto_parse }))}
+                  onClick={() =>
+                    setPortalConfig(prev => ({ ...prev, auto_parse: !prev.auto_parse }))
+                  }
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     portalConfig.auto_parse ? 'bg-blue-600' : 'bg-gray-200'
                   }`}

@@ -14,13 +14,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import api from '../services/api';
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-} from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 
 interface GrouperResult {
   claim_id: string;
@@ -62,7 +56,16 @@ interface OptimizationSuggestion {
   impact: number;
 }
 
-const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+const COLORS = [
+  '#10B981',
+  '#3B82F6',
+  '#F59E0B',
+  '#EF4444',
+  '#8B5CF6',
+  '#EC4899',
+  '#06B6D4',
+  '#84CC16',
+];
 
 const SEVERITY_LABELS: Record<number, { label: string; color: string }> = {
   0: { label: '없음', color: 'bg-gray-100 text-gray-700' },
@@ -144,7 +147,12 @@ export default function PreGrouperPage() {
 
   // 단건 그루핑 실행
   const handleSingleGroup = async () => {
-    if (!formData.patient_id || !formData.main_diagnosis || !formData.admission_date || !formData.discharge_date) {
+    if (
+      !formData.patient_id ||
+      !formData.main_diagnosis ||
+      !formData.admission_date ||
+      !formData.discharge_date
+    ) {
       setError('환자ID, 주진단, 입원일, 퇴원일은 필수입니다.');
       return;
     }
@@ -163,8 +171,14 @@ export default function PreGrouperPage() {
         discharge_date: formData.discharge_date,
         los: parseInt(formData.los) || 0,
         main_diagnosis: formData.main_diagnosis,
-        sub_diagnoses: formData.sub_diagnoses.split(',').map(s => s.trim()).filter(s => s),
-        procedures: formData.procedures.split(',').map(s => s.trim()).filter(s => s),
+        sub_diagnoses: formData.sub_diagnoses
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s),
+        procedures: formData.procedures
+          .split(',')
+          .map(s => s.trim())
+          .filter(s => s),
       });
 
       if (response.data.success) {
@@ -179,8 +193,14 @@ export default function PreGrouperPage() {
           discharge_date: formData.discharge_date,
           los: parseInt(formData.los) || 0,
           main_diagnosis: formData.main_diagnosis,
-          sub_diagnoses: formData.sub_diagnoses.split(',').map(s => s.trim()).filter(s => s),
-          procedures: formData.procedures.split(',').map(s => s.trim()).filter(s => s),
+          sub_diagnoses: formData.sub_diagnoses
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s),
+          procedures: formData.procedures
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s),
         });
         setOptimization(optRes.data.optimization);
       }
@@ -268,7 +288,7 @@ export default function PreGrouperPage() {
             { id: 'batch', label: '일괄 그루핑', icon: FileSpreadsheet },
             { id: 'history', label: '그루핑 이력', icon: History },
             { id: 'info', label: 'DRG 정보', icon: Info },
-          ].map((tab) => (
+          ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
@@ -368,7 +388,9 @@ export default function PreGrouperPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">주진단 (ICD-10) *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  주진단 (ICD-10) *
+                </label>
                 <input
                   type="text"
                   name="main_diagnosis"
@@ -439,10 +461,15 @@ export default function PreGrouperPage() {
                 <div className="bg-white rounded-lg shadow p-6">
                   <div className="flex justify-between items-start mb-4">
                     <h2 className="font-semibold text-lg">그루핑 결과</h2>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      result.confidence >= 80 ? 'bg-green-100 text-green-700' :
-                      result.confidence >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        result.confidence >= 80
+                          ? 'bg-green-100 text-green-700'
+                          : result.confidence >= 60
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-700'
+                      }`}
+                    >
                       신뢰도 {result.confidence}%
                     </span>
                   </div>
@@ -461,19 +488,25 @@ export default function PreGrouperPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between py-2 border-b">
                       <span className="text-gray-500">MDC (주진단범주)</span>
-                      <span className="font-medium">{result.mdc} - {result.mdc_name}</span>
+                      <span className="font-medium">
+                        {result.mdc} - {result.mdc_name}
+                      </span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
                       <span className="text-gray-500">DRG 유형</span>
-                      <span className={`font-medium ${
-                        result.drg_type !== '행위별' ? 'text-green-600' : 'text-gray-600'
-                      }`}>
+                      <span
+                        className={`font-medium ${
+                          result.drg_type !== '행위별' ? 'text-green-600' : 'text-gray-600'
+                        }`}
+                      >
                         {result.drg_type}
                       </span>
                     </div>
                     <div className="flex justify-between py-2 border-b">
                       <span className="text-gray-500">중증도</span>
-                      <span className={`px-2 py-0.5 rounded text-xs ${SEVERITY_LABELS[result.severity]?.color}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs ${SEVERITY_LABELS[result.severity]?.color}`}
+                      >
                         {result.severity} ({SEVERITY_LABELS[result.severity]?.label})
                       </span>
                     </div>
@@ -484,9 +517,10 @@ export default function PreGrouperPage() {
                     <div className="flex justify-between py-2 border-b">
                       <span className="text-gray-500">재원일수</span>
                       <span className="font-medium">
-                        {result.los}일 
+                        {result.los}일
                         <span className={`ml-2 ${LOS_OUTLIER_LABELS[result.los_outlier]?.color}`}>
-                          ({LOS_OUTLIER_LABELS[result.los_outlier]?.label}, 기준: {result.los_lower}-{result.los_upper}일)
+                          ({LOS_OUTLIER_LABELS[result.los_outlier]?.label}, 기준: {result.los_lower}
+                          -{result.los_upper}일)
                         </span>
                       </span>
                     </div>
@@ -540,10 +574,15 @@ export default function PreGrouperPage() {
                           <div className="flex justify-between items-start">
                             <span className="font-medium">{sug.action}</span>
                             {sug.impact !== 0 && (
-                              <span className={`text-xs px-2 py-0.5 rounded ${
-                                sug.impact > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                              }`}>
-                                {sug.impact > 0 ? '+' : ''}{formatAmount(sug.impact)}
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded ${
+                                  sug.impact > 0
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-red-100 text-red-700'
+                                }`}
+                              >
+                                {sug.impact > 0 ? '+' : ''}
+                                {formatAmount(sug.impact)}
                               </span>
                             )}
                           </div>
@@ -571,7 +610,7 @@ export default function PreGrouperPage() {
           {/* 파일 업로드 */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="font-semibold text-lg mb-4">파일 업로드</h2>
-            
+
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
               <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p className="text-gray-600 mb-2">CSV 또는 Excel 파일을 업로드하세요</p>
@@ -676,22 +715,33 @@ export default function PreGrouperPage() {
                         <td className="px-3 py-2">{r.patient_id}</td>
                         <td className="px-3 py-2 font-mono">{r.mdc}</td>
                         <td className="px-3 py-2 text-center">{r.mdc}</td>
-                        <td className="px-3 py-2 text-center font-mono font-bold text-blue-600">{r.kdrg}</td>
+                        <td className="px-3 py-2 text-center font-mono font-bold text-blue-600">
+                          {r.kdrg}
+                        </td>
                         <td className="px-3 py-2 text-center">
-                          <span className={`px-2 py-0.5 rounded text-xs ${SEVERITY_LABELS[r.severity]?.color}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs ${SEVERITY_LABELS[r.severity]?.color}`}
+                          >
                             {r.severity}
                           </span>
                         </td>
                         <td className="px-3 py-2">{r.drg_type}</td>
-                        <td className={`px-3 py-2 text-center ${LOS_OUTLIER_LABELS[r.los_outlier]?.color}`}>
+                        <td
+                          className={`px-3 py-2 text-center ${LOS_OUTLIER_LABELS[r.los_outlier]?.color}`}
+                        >
                           {r.los}일
                         </td>
                         <td className="px-3 py-2 text-right">{formatAmount(r.estimated_amount)}</td>
                         <td className="px-3 py-2 text-center">
-                          <span className={`text-xs ${
-                            r.confidence >= 80 ? 'text-green-600' :
-                            r.confidence >= 60 ? 'text-yellow-600' : 'text-red-600'
-                          }`}>
+                          <span
+                            className={`text-xs ${
+                              r.confidence >= 80
+                                ? 'text-green-600'
+                                : r.confidence >= 60
+                                  ? 'text-yellow-600'
+                                  : 'text-red-600'
+                            }`}
+                          >
                             {r.confidence}%
                           </span>
                         </td>
@@ -755,14 +805,11 @@ export default function PreGrouperPage() {
           <div className="bg-white rounded-lg shadow">
             <div className="p-4 border-b flex justify-between items-center">
               <h3 className="font-semibold">그루핑 이력</h3>
-              <button
-                onClick={fetchData}
-                className="p-2 text-gray-500 hover:text-gray-700"
-              >
+              <button onClick={fetchData} className="p-2 text-gray-500 hover:text-gray-700">
                 <RefreshCw className="w-4 h-4" />
               </button>
             </div>
-            
+
             {history.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <History className="w-12 h-12 mx-auto mb-4 text-gray-300" />
@@ -770,16 +817,24 @@ export default function PreGrouperPage() {
               </div>
             ) : (
               <div className="divide-y">
-                {history.map((item) => (
+                {history.map(item => (
                   <div key={item.history_id} className="p-4 hover:bg-gray-50">
                     <div className="flex justify-between items-start">
                       <div>
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          item.type === 'single' ? 'bg-blue-100 text-blue-700' :
-                          item.type === 'batch' ? 'bg-green-100 text-green-700' :
-                          'bg-purple-100 text-purple-700'
-                        }`}>
-                          {item.type === 'single' ? '단건' : item.type === 'batch' ? '배치' : '업로드'}
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded ${
+                            item.type === 'single'
+                              ? 'bg-blue-100 text-blue-700'
+                              : item.type === 'batch'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-purple-100 text-purple-700'
+                          }`}
+                        >
+                          {item.type === 'single'
+                            ? '단건'
+                            : item.type === 'batch'
+                              ? '배치'
+                              : '업로드'}
                         </span>
                         <span className="ml-2 font-mono text-sm">{item.history_id}</span>
                       </div>
@@ -789,7 +844,11 @@ export default function PreGrouperPage() {
                     </div>
                     <div className="mt-2 text-sm text-gray-600">
                       {item.patient_id && <span>환자ID: {item.patient_id}</span>}
-                      {item.total && <span>총 {item.total}건 ({item.success_count}건 성공)</span>}
+                      {item.total && (
+                        <span>
+                          총 {item.total}건 ({item.success_count}건 성공)
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -806,7 +865,7 @@ export default function PreGrouperPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="font-semibold text-lg mb-4">7개 포괄 DRG군</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {drg7Info.map((drg) => (
+              {drg7Info.map(drg => (
                 <div key={drg.code} className="border rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
                     <div>
@@ -825,11 +884,14 @@ export default function PreGrouperPage() {
                     {drg.procedures.length > 0 && (
                       <p>
                         <span className="text-gray-500">수술:</span>{' '}
-                        <code className="bg-gray-100 px-1 rounded">{drg.procedures.slice(0, 3).join(', ')}...</code>
+                        <code className="bg-gray-100 px-1 rounded">
+                          {drg.procedures.slice(0, 3).join(', ')}...
+                        </code>
                       </p>
                     )}
                     <p>
-                      <span className="text-gray-500">재원일수:</span> {drg.los_lower} ~ {drg.los_upper}일
+                      <span className="text-gray-500">재원일수:</span> {drg.los_lower} ~{' '}
+                      {drg.los_upper}일
                     </p>
                   </div>
                 </div>
@@ -846,7 +908,10 @@ export default function PreGrouperPage() {
             <div className="text-sm text-blue-700 space-y-2">
               <p>• Pre-Grouper는 청구 전 KDRG 코드를 사전에 예측하는 도구입니다.</p>
               <p>• 실제 심평원 심사 결과와 차이가 있을 수 있으며, 참고용으로만 사용하세요.</p>
-              <p>• 7개 포괄 DRG군 (편도, 축농증, 탈장, 담낭, 항문, 결석, 제왕절개, 질식분만)은 정확도가 높습니다.</p>
+              <p>
+                • 7개 포괄 DRG군 (편도, 축농증, 탈장, 담낭, 항문, 결석, 제왕절개, 질식분만)은
+                정확도가 높습니다.
+              </p>
               <p>• 행위별 청구 대상은 예측 정확도가 낮을 수 있습니다.</p>
               <p>• 최적화 제안은 코딩 검토 시 참고자료로 활용하세요.</p>
             </div>

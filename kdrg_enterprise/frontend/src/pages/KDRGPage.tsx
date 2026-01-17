@@ -40,13 +40,13 @@ export default function KDRGPage() {
   const { data: codebookData, isLoading: codebookLoading } = useQuery({
     queryKey: ['kdrgCodebook', search],
     queryFn: () =>
-      kdrgAPI.codebook({ search: search || undefined, per_page: 50 }).then((res) => res.data),
+      kdrgAPI.codebook({ search: search || undefined, per_page: 50 }).then(res => res.data),
     enabled: activeTab === 'codebook',
   });
 
   const { data: drg7Data, isLoading: drg7Loading } = useQuery({
     queryKey: ['7drg'],
-    queryFn: () => kdrgAPI.get7DRG().then((res) => res.data),
+    queryFn: () => kdrgAPI.get7DRG().then(res => res.data),
     enabled: activeTab === '7drg',
   });
 
@@ -60,7 +60,7 @@ export default function KDRGPage() {
 
   const validateMutation = useMutation({
     mutationFn: (code: string) => kdrgAPI.validate(code),
-    onSuccess: (response) => {
+    onSuccess: response => {
       setValidationResult(response.data);
     },
   });
@@ -83,9 +83,7 @@ export default function KDRGPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">KDRG 관리</h1>
-          <p className="mt-1 text-gray-600">
-            KDRG 코드북 및 7개 DRG군 관리
-          </p>
+          <p className="mt-1 text-gray-600">KDRG 코드북 및 7개 DRG군 관리</p>
         </div>
         <button
           onClick={() => setShowUploadModal(true)}
@@ -103,7 +101,7 @@ export default function KDRGPage() {
             { id: 'codebook', label: '코드북', icon: FileCode },
             { id: '7drg', label: '7개 DRG군', icon: FileCode },
             { id: 'validate', label: '코드 검증', icon: CheckCircle },
-          ].map((tab) => (
+          ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
@@ -132,7 +130,7 @@ export default function KDRGPage() {
                 type="text"
                 placeholder="KDRG 코드 또는 명칭 검색..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={e => setSearch(e.target.value)}
                 className="input pl-10"
               />
             </div>
@@ -209,15 +207,13 @@ export default function KDRGPage() {
                 </div>
                 <p className="text-gray-600 mb-3">{group.description}</p>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {group.conditions.map((condition) => (
+                  {group.conditions.map(condition => (
                     <span key={condition} className="badge-primary">
                       {condition}
                     </span>
                   ))}
                 </div>
-                <p className="text-sm text-gray-500">
-                  관련 KDRG 코드: {group.kdrg_count}개
-                </p>
+                <p className="text-sm text-gray-500">관련 KDRG 코드: {group.kdrg_count}개</p>
               </div>
             ))
           ) : (
@@ -231,15 +227,13 @@ export default function KDRGPage() {
       {activeTab === 'validate' && (
         <div className="max-w-xl mx-auto">
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              KDRG 코드 유효성 검증
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">KDRG 코드 유효성 검증</h3>
             <div className="flex gap-3 mb-4">
               <input
                 type="text"
                 placeholder="KDRG 코드 입력 (예: T0110)"
                 value={validateCode}
-                onChange={(e) => setValidateCode(e.target.value.toUpperCase())}
+                onChange={e => setValidateCode(e.target.value.toUpperCase())}
                 className="input flex-1"
                 maxLength={5}
               />
@@ -281,21 +275,15 @@ export default function KDRGPage() {
                   <div className="mt-4 space-y-2 text-sm">
                     <p>
                       <span className="text-gray-600">코드:</span>{' '}
-                      <span className="font-medium">
-                        {validationResult.kdrg_info.kdrg_code}
-                      </span>
+                      <span className="font-medium">{validationResult.kdrg_info.kdrg_code}</span>
                     </p>
                     <p>
                       <span className="text-gray-600">명칭:</span>{' '}
-                      <span className="font-medium">
-                        {validationResult.kdrg_info.kdrg_name}
-                      </span>
+                      <span className="font-medium">{validationResult.kdrg_info.kdrg_name}</span>
                     </p>
                     <p>
                       <span className="text-gray-600">AADRG:</span>{' '}
-                      <span className="font-medium">
-                        {validationResult.kdrg_info.aadrg_code}
-                      </span>
+                      <span className="font-medium">{validationResult.kdrg_info.aadrg_code}</span>
                     </p>
                     {validationResult.kdrg_info.relative_weight && (
                       <p>
@@ -317,14 +305,12 @@ export default function KDRGPage() {
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              KDRG 코드북 업로드
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">KDRG 코드북 업로드</h3>
             <div className="mb-4">
               <label className="label">버전</label>
               <select
                 value={uploadVersion}
-                onChange={(e) => setUploadVersion(e.target.value)}
+                onChange={e => setUploadVersion(e.target.value)}
                 className="input"
               >
                 <option value="V4.6">KDRG V4.6</option>
@@ -345,10 +331,7 @@ export default function KDRGPage() {
             >
               {uploadMutation.isPending ? '업로드 중...' : '파일 선택'}
             </button>
-            <button
-              onClick={() => setShowUploadModal(false)}
-              className="w-full btn-secondary"
-            >
+            <button onClick={() => setShowUploadModal(false)} className="w-full btn-secondary">
               취소
             </button>
           </div>

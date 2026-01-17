@@ -24,7 +24,7 @@ export default function UpdateReminderModal({
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<'success' | 'error' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  
+
   const syncStatus = checkSyncStatus();
 
   const handleSync = async () => {
@@ -33,22 +33,29 @@ export default function UpdateReminderModal({
     setErrorMessage('');
 
     try {
-      // HIRA API 상태 확인 및 데이터 동기화
-      await hiraAPI.status();
-      
-      // 동기화 성공 시 날짜 저장
-      setLastSyncDate();
-      setSyncResult('success');
-      
-      // 잠시 후 모달 닫기
-      setTimeout(() => {
-        onSyncComplete?.();
-        onClose();
-      }, 1500);
+      // 실제 KDRG 코드북 동기화 API 호출
+      const response = await hiraAPI.sync();
+
+      if (response.data.success) {
+        // 동기화 성공 시 날짜 저장
+        setLastSyncDate();
+        setSyncResult('success');
+
+        // 잠시 후 모달 닫기
+        setTimeout(() => {
+          onSyncComplete?.();
+          onClose();
+        }, 1500);
+      } else {
+        setSyncResult('error');
+        setErrorMessage(response.data.message || 'KDRG 기준정보 동기화에 실패했습니다.');
+      }
     } catch (error) {
       console.error('Sync failed:', error);
       setSyncResult('error');
-      setErrorMessage('KDRG 기준정보 확인에 실패했습니다. 네트워크 연결을 확인하거나 나중에 다시 시도해주세요.');
+      setErrorMessage(
+        'KDRG 기준정보 확인에 실패했습니다. 네트워크 연결을 확인하거나 나중에 다시 시도해주세요.'
+      );
     } finally {
       setSyncing(false);
     }
@@ -67,15 +74,11 @@ export default function UpdateReminderModal({
           <div className="flex items-start gap-3">
             <Clock className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-blue-900">
-                마지막 동기화 날짜
-              </p>
+              <p className="text-sm font-medium text-blue-900">마지막 동기화 날짜</p>
               <p className="text-sm text-blue-700 mt-1">
                 {formatDate(syncStatus.lastSyncDate)}
                 {syncStatus.daysSinceSync !== null && (
-                  <span className="ml-2 text-blue-500">
-                    ({syncStatus.daysSinceSync}일 전)
-                  </span>
+                  <span className="ml-2 text-blue-500">({syncStatus.daysSinceSync}일 전)</span>
                 )}
               </p>
             </div>
@@ -85,8 +88,8 @@ export default function UpdateReminderModal({
         {/* Description */}
         <div className="text-sm text-gray-600">
           <p>
-            심평원 KDRG 기준정보가 변경되었을 수 있습니다. 
-            정확한 DRG 분류와 수가 계산을 위해 주기적인 업데이트 확인을 권장합니다.
+            심평원 KDRG 기준정보가 변경되었을 수 있습니다. 정확한 DRG 분류와 수가 계산을 위해
+            주기적인 업데이트 확인을 권장합니다.
           </p>
         </div>
 
@@ -95,9 +98,7 @@ export default function UpdateReminderModal({
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="flex items-center gap-3">
               <CheckCircle className="h-5 w-5 text-green-500" />
-              <p className="text-sm font-medium text-green-800">
-                기준정보가 최신 상태입니다.
-              </p>
+              <p className="text-sm font-medium text-green-800">기준정보가 최신 상태입니다.</p>
             </div>
           </div>
         )}

@@ -67,14 +67,24 @@ function StatsCard({ title, value, change, icon: Icon, color }: StatsCardProps) 
 }
 
 export default function DashboardPage() {
-  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useQuery({
+  const {
+    data: dashboardData,
+    isLoading: dashboardLoading,
+    error: dashboardError,
+    refetch: refetchDashboard,
+  } = useQuery({
     queryKey: ['dashboard'],
-    queryFn: () => analysisAPI.dashboard().then((res) => res.data),
+    queryFn: () => analysisAPI.dashboard().then(res => res.data),
   });
 
-  const { data: statsData, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useQuery({
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
+  } = useQuery({
     queryKey: ['patientStats'],
-    queryFn: () => patientsAPI.stats().then((res) => res.data),
+    queryFn: () => patientsAPI.stats().then(res => res.data),
   });
 
   const handleRefetch = () => {
@@ -102,15 +112,17 @@ export default function DashboardPage() {
   const dashboard = dashboardData?.dashboard;
   const stats = statsData?.stats;
 
-  const drgData = dashboard?.by_drg_group?.map((item: { drg_group: string; patient_count: number }) => ({
-    name: item.drg_group.replace(' - ', '\n'),
-    value: item.patient_count,
-  })) || [];
+  const drgData =
+    dashboard?.by_drg_group?.map((item: { drg_group: string; patient_count: number }) => ({
+      name: item.drg_group.replace(' - ', '\n'),
+      value: item.patient_count,
+    })) || [];
 
-  const deptData = dashboard?.by_department?.map((item: { department: string; patient_count: number }) => ({
-    name: item.department,
-    patients: item.patient_count,
-  })) || [];
+  const deptData =
+    dashboard?.by_department?.map((item: { department: string; patient_count: number }) => ({
+      name: item.department,
+      patients: item.patient_count,
+    })) || [];
 
   return (
     <div className="space-y-6">
@@ -160,9 +172,7 @@ export default function DashboardPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name} (${(percent * 100).toFixed(0)}%)`
-                  }
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -209,35 +219,38 @@ export default function DashboardPage() {
       {/* Critical Alerts */}
       {dashboard?.critical_alerts?.length > 0 && (
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            긴급 경고
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">긴급 경고</h3>
           <div className="space-y-3">
-            {dashboard.critical_alerts.map((alert: {
-              patient_id: number;
-              masked_name: string;
-              alert_type: string;
-              description: string;
-              estimated_loss: number;
-            }, index: number) => (
-              <div
-                key={index}
-                className="flex items-center gap-4 p-4 bg-danger-50 rounded-lg border border-danger-200"
-              >
-                <AlertTriangle className="h-5 w-5 text-danger-600 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-danger-800">
-                    {alert.masked_name} - {alert.alert_type}
-                  </p>
-                  <p className="text-sm text-danger-600">{alert.description}</p>
+            {dashboard.critical_alerts.map(
+              (
+                alert: {
+                  patient_id: number;
+                  masked_name: string;
+                  alert_type: string;
+                  description: string;
+                  estimated_loss: number;
+                },
+                index: number
+              ) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-4 p-4 bg-danger-50 rounded-lg border border-danger-200"
+                >
+                  <AlertTriangle className="h-5 w-5 text-danger-600 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-danger-800">
+                      {alert.masked_name} - {alert.alert_type}
+                    </p>
+                    <p className="text-sm text-danger-600">{alert.description}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-medium text-danger-600">
+                      ₩{alert.estimated_loss.toLocaleString()}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-medium text-danger-600">
-                    ₩{alert.estimated_loss.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       )}

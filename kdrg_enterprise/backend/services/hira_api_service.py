@@ -461,8 +461,21 @@ class HIRAAPIService:
         return result
 
 
+# 전역 인스턴스 생성 함수
+def get_hira_api_service():
+    """HIRA API 서비스 인스턴스 반환 (환경변수에서 API 키 로드)"""
+    from dotenv import load_dotenv
+    
+    # .env 파일 로드 (상위 디렉토리)
+    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+    
+    api_key = os.environ.get('DATA_GO_KR_API_KEY') or os.environ.get('HIRA_API_KEY')
+    return HIRAAPIService(api_key=api_key)
+
 # 전역 인스턴스
-hira_api_service = HIRAAPIService()
+hira_api_service = get_hira_api_service()
 
 
 # 테스트 함수

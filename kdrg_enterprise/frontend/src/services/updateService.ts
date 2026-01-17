@@ -58,7 +58,7 @@ export function isReminderDismissedToday(): boolean {
   try {
     const dismissedDate = localStorage.getItem(REMINDER_DISMISSED_KEY);
     if (!dismissedDate) return false;
-    
+
     const today = new Date().toISOString().split('T')[0];
     return dismissedDate === today;
   } catch {
@@ -71,7 +71,7 @@ export function isReminderDismissedToday(): boolean {
  */
 export function checkSyncStatus(reminderDays: number = DEFAULT_REMINDER_DAYS): SyncStatus {
   const lastSyncDate = getLastSyncDate();
-  
+
   if (!lastSyncDate) {
     return {
       lastSyncDate: null,
@@ -79,13 +79,13 @@ export function checkSyncStatus(reminderDays: number = DEFAULT_REMINDER_DAYS): S
       needsReminder: true, // 한번도 동기화한 적 없으면 알림 필요
     };
   }
-  
+
   try {
     const lastSync = new Date(lastSyncDate);
     const today = new Date();
     const diffTime = today.getTime() - lastSync.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+
     // 오늘 이미 닫았으면 알림 불필요
     if (isReminderDismissedToday()) {
       return {
@@ -94,7 +94,7 @@ export function checkSyncStatus(reminderDays: number = DEFAULT_REMINDER_DAYS): S
         needsReminder: false,
       };
     }
-    
+
     return {
       lastSyncDate,
       daysSinceSync: diffDays,
@@ -126,7 +126,7 @@ export function resetSyncStatus(): void {
  */
 export function formatDate(dateString: string | null): string {
   if (!dateString) return '없음';
-  
+
   try {
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {

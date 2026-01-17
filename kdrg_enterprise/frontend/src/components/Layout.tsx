@@ -29,7 +29,12 @@ const navigation = [
   { name: 'KDRG', href: '/kdrg', icon: FileCode, description: 'KDRG 코드 관리' },
   { name: 'Pre-Grouper', href: '/pregrouper', icon: Calculator, description: '사전 DRG 분류' },
   { name: '최적화', href: '/optimization', icon: TrendingUp, description: '전역 KDRG 최적화' },
-  { name: '환류데이터', href: '/feedback', icon: FileSpreadsheet, description: '심평원 환류 데이터' },
+  {
+    name: '환류데이터',
+    href: '/feedback',
+    icon: FileSpreadsheet,
+    description: '심평원 환류 데이터',
+  },
   { name: '비교분석', href: '/comparison', icon: GitCompare, description: '청구 vs 심사 비교' },
   { name: '설정', href: '/settings', icon: Settings, description: '시스템 설정' },
 ];
@@ -102,7 +107,7 @@ export default function Layout() {
 
         {/* Navigation */}
         <nav className="p-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
-          {navigation.map((item) => (
+          {navigation.map(item => (
             <NavLink
               key={item.name}
               to={item.href}
@@ -136,9 +141,7 @@ export default function Layout() {
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.username}
-              </p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.username}</p>
               <p className="text-xs text-gray-500 truncate">{user?.department || '부서 미지정'}</p>
             </div>
             <Tooltip content="로그아웃">
@@ -182,7 +185,7 @@ export default function Layout() {
             {/* Right side */}
             <div className="flex items-center gap-4">
               <Tooltip content="도움말">
-                <button 
+                <button
                   className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                   aria-label="도움말"
                 >

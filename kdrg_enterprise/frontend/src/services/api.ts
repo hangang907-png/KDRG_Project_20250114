@@ -8,7 +8,7 @@ const api = axios.create({
 });
 
 // Request interceptor for auth token
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -18,8 +18,8 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => response,
+  error => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
@@ -30,8 +30,7 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: (username: string, password: string) =>
-    api.post('/auth/login', { username, password }),
+  login: (username: string, password: string) => api.post('/auth/login', { username, password }),
   logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
 };
@@ -84,6 +83,7 @@ export const analysisAPI = {
 export const hiraAPI = {
   status: () => api.get('/hira/status'),
   setApiKey: (api_key: string) => api.post('/hira/config/apikey', { api_key }),
+  sync: () => api.post('/hira/sync'),
   queryKDRG: (params?: { kdrg_code?: string; aadrg_code?: string }) =>
     api.get('/hira/kdrg', { params }),
   get7DRG: () => api.get('/hira/7drg'),
@@ -126,26 +126,25 @@ export const optimizationAPI = {
     age?: number;
     sex?: string;
   }) => api.post('/optimization/analyze/patient', data),
-  analyzeBatch: (data: {
-    patients: unknown[];
-    mdc_filter?: string;
-    min_potential?: number;
-  }) => api.post('/optimization/analyze/batch', data),
+  analyzeBatch: (data: { patients: unknown[]; mdc_filter?: string; min_potential?: number }) =>
+    api.post('/optimization/analyze/batch', data),
   simulate: (patient_data: unknown, target_kdrg: string) =>
     api.post('/optimization/simulate', { patient_data, target_kdrg }),
-  compare: (kdrg1: string, kdrg2: string) =>
-    api.get(`/optimization/compare/${kdrg1}/${kdrg2}`),
+  compare: (kdrg1: string, kdrg2: string) => api.get(`/optimization/compare/${kdrg1}/${kdrg2}`),
 };
 
 // HIRA Portal API (자동 다운로드)
 export const portalAPI = {
-  login: (data: { hospital_code: string; user_id: string; password: string; login_method?: string }) =>
-    api.post('/feedback/portal/login', data),
+  login: (data: {
+    hospital_code: string;
+    user_id: string;
+    password: string;
+    login_method?: string;
+  }) => api.post('/feedback/portal/login', data),
   logout: () => api.post('/feedback/portal/logout'),
   getFiles: (params?: { start_date?: string; end_date?: string; file_type?: string }) =>
     api.get('/feedback/portal/files', { params }),
-  download: (file_ids: string[]) =>
-    api.post('/feedback/portal/download', { file_ids }),
+  download: (file_ids: string[]) => api.post('/feedback/portal/download', { file_ids }),
   autoDownload: () => api.post('/feedback/portal/auto-download'),
   getStatus: () => api.get('/feedback/portal/status'),
   getConfig: () => api.get('/feedback/portal/config'),

@@ -1,0 +1,1 @@
+cd kdrg_enterprise/frontend && pnpm lint-staged

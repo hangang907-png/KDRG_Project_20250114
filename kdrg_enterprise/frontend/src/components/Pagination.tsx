@@ -106,13 +106,11 @@ export default function Pagination({
                 >
                   1
                 </button>
-                {visiblePages[0] > 2 && (
-                  <span className="px-2 text-gray-400">...</span>
-                )}
+                {visiblePages[0] > 2 && <span className="px-2 text-gray-400">...</span>}
               </>
             )}
 
-            {visiblePages.map((page) => (
+            {visiblePages.map(page => (
               <button
                 key={page}
                 onClick={() => onPageChange(page)}

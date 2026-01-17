@@ -15,7 +15,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!username.trim()) {
       setError('사용자명을 입력해주세요.');
       return;
@@ -24,7 +24,7 @@ export default function LoginPage() {
       setError('비밀번호를 입력해주세요.');
       return;
     }
-    
+
     setLoading(true);
 
     try {
@@ -72,7 +72,7 @@ export default function LoginPage() {
                   id="username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={e => setUsername(e.target.value)}
                   className="input pl-10"
                   placeholder="사용자명을 입력하세요"
                   autoComplete="username"
@@ -94,7 +94,7 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   className="input pl-10 pr-10"
                   placeholder="비밀번호를 입력하세요"
                   autoComplete="current-password"
@@ -105,11 +105,7 @@ export default function LoginPage() {
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                   aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
@@ -136,9 +132,7 @@ export default function LoginPage() {
 
           {/* Help Text */}
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <p className="text-center text-sm text-gray-500">
-              테스트 계정
-            </p>
+            <p className="text-center text-sm text-gray-500">테스트 계정</p>
             <div className="mt-2 bg-gray-50 rounded-lg px-4 py-3 text-center">
               <code className="text-sm text-gray-700">admin / admin123</code>
             </div>

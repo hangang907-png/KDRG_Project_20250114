@@ -42,15 +42,10 @@ export default function EmptyState({
       </div>
       <h3 className="text-lg font-medium text-gray-900 mb-1">{title}</h3>
       {description && (
-        <p className="text-sm text-gray-500 text-center max-w-sm mb-4">
-          {description}
-        </p>
+        <p className="text-sm text-gray-500 text-center max-w-sm mb-4">{description}</p>
       )}
       {actionLabel && onAction && (
-        <button
-          onClick={onAction}
-          className="btn-primary"
-        >
+        <button onClick={onAction} className="btn-primary">
           {actionLabel}
         </button>
       )}

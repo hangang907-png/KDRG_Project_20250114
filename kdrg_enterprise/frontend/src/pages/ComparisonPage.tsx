@@ -73,7 +73,11 @@ interface Recommendation {
 
 const MISMATCH_TYPE_LABELS: Record<string, { label: string; color: string; icon: any }> = {
   exact_match: { label: '정확히 일치', color: 'text-green-600 bg-green-50', icon: CheckCircle },
-  severity_diff: { label: '중증도 차이', color: 'text-yellow-600 bg-yellow-50', icon: AlertTriangle },
+  severity_diff: {
+    label: '중증도 차이',
+    color: 'text-yellow-600 bg-yellow-50',
+    icon: AlertTriangle,
+  },
   aadrg_diff: { label: 'AADRG 차이', color: 'text-orange-600 bg-orange-50', icon: AlertTriangle },
   mdc_diff: { label: 'MDC 차이', color: 'text-red-600 bg-red-50', icon: XCircle },
 };
@@ -97,7 +101,7 @@ export default function ComparisonPage() {
   const [details, setDetails] = useState<ComparisonDetail[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [drg7Analysis, setDrg7Analysis] = useState<any>(null);
-  
+
   const [predictedFile, setPredictedFile] = useState('');
   const [actualFile, setActualFile] = useState('');
   const [loading, setLoading] = useState(false);
@@ -149,7 +153,7 @@ export default function ComparisonPage() {
         setSelectedResult(response.data);
         setActiveTab('results');
         fetchData(); // 결과 목록 갱신
-        
+
         // 상세 데이터 로드
         await loadResultDetails(response.data.result_id);
       }
@@ -168,7 +172,7 @@ export default function ComparisonPage() {
         api.get(`/comparison/results/${resultId}/recommendations`),
         api.get(`/comparison/results/${resultId}/drg7`),
       ]);
-      
+
       setDetails(detailsRes.data.records || []);
       setRecommendations(recsRes.data.recommendations || []);
       setDrg7Analysis(drg7Res.data.drg7_analysis || {});
@@ -240,7 +244,7 @@ export default function ComparisonPage() {
             { id: 'analyze', label: '분석 실행', icon: GitCompare },
             { id: 'results', label: '분석 결과', icon: BarChart3 },
             { id: 'details', label: '상세 비교', icon: FileText },
-          ].map((tab) => (
+          ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
@@ -263,7 +267,7 @@ export default function ComparisonPage() {
           {/* 분석 설정 */}
           <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
             <h2 className="font-semibold text-lg mb-4">비교 분석 설정</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -271,34 +275,38 @@ export default function ComparisonPage() {
                 </label>
                 <select
                   value={predictedFile}
-                  onChange={(e) => setPredictedFile(e.target.value)}
+                  onChange={e => setPredictedFile(e.target.value)}
                   className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">파일 선택...</option>
-                  {files.filter(f => f.data_type === 'drg_claim').map(f => (
-                    <option key={f.file_id} value={f.file_id}>
-                      {f.file_name} ({f.total_records}건)
-                    </option>
-                  ))}
+                  {files
+                    .filter(f => f.data_type === 'drg_claim')
+                    .map(f => (
+                      <option key={f.file_id} value={f.file_id}>
+                        {f.file_name} ({f.total_records}건)
+                      </option>
+                    ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">병원에서 청구한 KDRG 코드</p>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   심사 결과 (실제)
                 </label>
                 <select
                   value={actualFile}
-                  onChange={(e) => setActualFile(e.target.value)}
+                  onChange={e => setActualFile(e.target.value)}
                   className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">파일 선택...</option>
-                  {files.filter(f => f.data_type === 'review_result').map(f => (
-                    <option key={f.file_id} value={f.file_id}>
-                      {f.file_name} ({f.total_records}건)
-                    </option>
-                  ))}
+                  {files
+                    .filter(f => f.data_type === 'review_result')
+                    .map(f => (
+                      <option key={f.file_id} value={f.file_id}>
+                        {f.file_name} ({f.total_records}건)
+                      </option>
+                    ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">심평원 심사 후 확정된 KDRG 코드</p>
               </div>
@@ -350,7 +358,7 @@ export default function ComparisonPage() {
               <p className="text-gray-500 text-center py-8">분석 결과가 없습니다</p>
             ) : (
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {results.map((result) => (
+                {results.map(result => (
                   <div
                     key={result.result_id}
                     onClick={() => handleSelectResult(result)}
@@ -363,10 +371,15 @@ export default function ComparisonPage() {
                           {new Date(result.created_at).toLocaleString('ko-KR')}
                         </p>
                       </div>
-                      <div className={`text-lg font-bold ${
-                        result.accuracy_rate >= 80 ? 'text-green-600' :
-                        result.accuracy_rate >= 60 ? 'text-yellow-600' : 'text-red-600'
-                      }`}>
+                      <div
+                        className={`text-lg font-bold ${
+                          result.accuracy_rate >= 80
+                            ? 'text-green-600'
+                            : result.accuracy_rate >= 60
+                              ? 'text-yellow-600'
+                              : 'text-red-600'
+                        }`}
+                      >
                         {result.accuracy_rate}%
                       </div>
                     </div>
@@ -388,10 +401,15 @@ export default function ComparisonPage() {
                 <Target className="w-4 h-4" />
                 <span className="text-sm">전체 정확도</span>
               </div>
-              <p className={`text-3xl font-bold ${
-                selectedResult.summary?.accuracy_rate >= 80 ? 'text-green-600' :
-                selectedResult.summary?.accuracy_rate >= 60 ? 'text-yellow-600' : 'text-red-600'
-              }`}>
+              <p
+                className={`text-3xl font-bold ${
+                  selectedResult.summary?.accuracy_rate >= 80
+                    ? 'text-green-600'
+                    : selectedResult.summary?.accuracy_rate >= 60
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
+                }`}
+              >
                 {selectedResult.summary?.accuracy_rate || 0}%
               </p>
             </div>
@@ -422,9 +440,13 @@ export default function ComparisonPage() {
                 )}
                 <span className="text-sm">금액 차이</span>
               </div>
-              <p className={`text-2xl font-bold ${
-                (selectedResult.summary?.total_difference || 0) > 0 ? 'text-red-600' : 'text-green-600'
-              }`}>
+              <p
+                className={`text-2xl font-bold ${
+                  (selectedResult.summary?.total_difference || 0) > 0
+                    ? 'text-red-600'
+                    : 'text-green-600'
+                }`}
+              >
                 {formatAmount(Math.abs(selectedResult.summary?.total_difference || 0))}
               </p>
             </div>
@@ -481,10 +503,15 @@ export default function ComparisonPage() {
                     <div key={code} className="p-3 border rounded-lg">
                       <div className="flex justify-between items-start mb-2">
                         <span className="font-mono font-bold">{code}</span>
-                        <span className={`text-lg font-bold ${
-                          data.accuracy >= 80 ? 'text-green-600' :
-                          data.accuracy >= 60 ? 'text-yellow-600' : 'text-red-600'
-                        }`}>
+                        <span
+                          className={`text-lg font-bold ${
+                            data.accuracy >= 80
+                              ? 'text-green-600'
+                              : data.accuracy >= 60
+                                ? 'text-yellow-600'
+                                : 'text-red-600'
+                          }`}
+                        >
                           {data.accuracy}%
                         </span>
                       </div>
@@ -509,19 +536,29 @@ export default function ComparisonPage() {
                   <div
                     key={idx}
                     className={`p-4 rounded-lg border-l-4 ${
-                      rec.priority === 'high' ? 'border-red-500 bg-red-50' :
-                      rec.priority === 'medium' ? 'border-yellow-500 bg-yellow-50' :
-                      'border-blue-500 bg-blue-50'
+                      rec.priority === 'high'
+                        ? 'border-red-500 bg-red-50'
+                        : rec.priority === 'medium'
+                          ? 'border-yellow-500 bg-yellow-50'
+                          : 'border-blue-500 bg-blue-50'
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <span className={`text-xs font-medium px-2 py-1 rounded ${
-                          rec.priority === 'high' ? 'bg-red-200 text-red-800' :
-                          rec.priority === 'medium' ? 'bg-yellow-200 text-yellow-800' :
-                          'bg-blue-200 text-blue-800'
-                        }`}>
-                          {rec.priority === 'high' ? '높음' : rec.priority === 'medium' ? '중간' : '낮음'}
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded ${
+                            rec.priority === 'high'
+                              ? 'bg-red-200 text-red-800'
+                              : rec.priority === 'medium'
+                                ? 'bg-yellow-200 text-yellow-800'
+                                : 'bg-blue-200 text-blue-800'
+                          }`}
+                        >
+                          {rec.priority === 'high'
+                            ? '높음'
+                            : rec.priority === 'medium'
+                              ? '중간'
+                              : '낮음'}
                         </span>
                         <span className="ml-2 text-sm font-medium">{rec.category}</span>
                       </div>
@@ -575,7 +612,7 @@ export default function ComparisonPage() {
               <Filter className="w-4 h-4 text-gray-400" />
               <select
                 value={mismatchFilter}
-                onChange={(e) => setMismatchFilter(e.target.value)}
+                onChange={e => setMismatchFilter(e.target.value)}
                 className="border rounded px-3 py-1 text-sm"
               >
                 <option value="">전체</option>
@@ -586,7 +623,7 @@ export default function ComparisonPage() {
               </select>
             </div>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
@@ -607,26 +644,35 @@ export default function ComparisonPage() {
                     <tr key={idx} className="hover:bg-gray-50">
                       <td className="px-3 py-2">{detail.claim_id}</td>
                       <td className="px-3 py-2 font-mono">{detail.predicted_kdrg}</td>
-                      <td className={`px-3 py-2 font-mono ${!detail.is_match ? 'text-red-600 font-semibold' : ''}`}>
+                      <td
+                        className={`px-3 py-2 font-mono ${!detail.is_match ? 'text-red-600 font-semibold' : ''}`}
+                      >
                         {detail.actual_kdrg}
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${typeInfo?.color}`}>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${typeInfo?.color}`}
+                        >
                           {typeInfo?.label}
                         </span>
                       </td>
                       <td className="px-3 py-2">
                         {detail.mismatch_causes.map(c => CAUSE_LABELS[c] || c).join(', ')}
                       </td>
-                      <td className={`px-3 py-2 text-right ${detail.amount_difference > 0 ? 'text-red-600' : ''}`}>
+                      <td
+                        className={`px-3 py-2 text-right ${detail.amount_difference > 0 ? 'text-red-600' : ''}`}
+                      >
                         {formatAmount(detail.amount_difference)}
                       </td>
                       <td className="px-3 py-2 text-center">
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
                             className={`h-2 rounded-full ${
-                              detail.risk_score >= 70 ? 'bg-red-500' :
-                              detail.risk_score >= 40 ? 'bg-yellow-500' : 'bg-green-500'
+                              detail.risk_score >= 70
+                                ? 'bg-red-500'
+                                : detail.risk_score >= 40
+                                  ? 'bg-yellow-500'
+                                  : 'bg-green-500'
                             }`}
                             style={{ width: `${detail.risk_score}%` }}
                           />
@@ -638,7 +684,7 @@ export default function ComparisonPage() {
               </tbody>
             </table>
           </div>
-          
+
           {filteredDetails.length === 0 && (
             <div className="p-8 text-center text-gray-500">
               데이터가 없습니다. 먼저 분석을 실행해주세요.

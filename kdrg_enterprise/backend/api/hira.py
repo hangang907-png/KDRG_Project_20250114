@@ -7,12 +7,15 @@ from pydantic import BaseModel
 from typing import Optional, List
 import os
 import sys
+import logging
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import settings
 from services.hira_api_service import hira_api_service, KDRGInfo, HospitalInfo
+from services.kdrg_codebook_service import codebook_service
 from api.auth import require_auth, require_admin, UserInfo
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -54,13 +57,118 @@ async def set_api_key(
 async def get_api_status(user: UserInfo = Depends(require_auth)):
     """API 연동 상태 확인"""
     has_key = bool(hira_api_service.api_key)
+    sync_status = codebook_service.get_sync_status()
     
     return {
         "success": True,
         "api_configured": has_key,
         "base_url": hira_api_service.base_url,
-        "message": "API 키가 설정되었습니다." if has_key else "API 키가 설정되지 않았습니다."
+        "message": "API 키가 설정되었습니다." if has_key else "API 키가 설정되지 않았습니다.",
+        "codebook_status": sync_status
     }
+
+
+@router.post("/sync")
+async def sync_kdrg_codebook(
+    version: str = Query("V4.7", description="KDRG 버전 (예: V4.6, V4.7)"),
+    user: UserInfo = Depends(require_auth)
+):
+    """KDRG 코드북 동기화 (심평원 API에서 데이터 가져와 DB에 저장)"""
+    if not hira_api_service.api_key:
+        return {
+            "success": False,
+            "message": "API 키가 설정되지 않았습니다. 먼저 API 키를 설정해주세요."
+        }
+    
+    try:
+        logger.info("Starting KDRG codebook sync...")
+        all_entries = []
+        
+        # MDC별로 데이터 가져오기
+        mdc_codes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+        
+        for mdc in mdc_codes:
+            try:
+                response = await hira_api_service.get_kdrg_info(
+                    mdc_code=mdc,
+                    page_no=1,
+                    num_of_rows=500
+                )
+                
+                if response.success and response.data:
+                    for item in response.data:
+                        if isinstance(item, KDRGInfo):
+                            all_entries.append({
+                                'kdrg_code': item.kdrg_code,
+                                'kdrg_name': item.kdrg_name,
+                                'aadrg_code': item.aadrg_code,
+                                'aadrg_name': item.aadrg_name,
+                                'mdc_code': item.mdc_code,
+                                'mdc_name': item.mdc_name,
+                                'cc_level': item.cc_level,
+                                'relative_weight': item.relative_weight,
+                                'geometric_mean_los': item.geometric_mean_los,
+                                'arithmetic_mean_los': item.arithmetic_mean_los,
+                                'low_trim': item.low_trim,
+                                'high_trim': item.high_trim,
+                                'version': version
+                            })
+                    logger.info(f"MDC {mdc}: {len(response.data)} entries fetched")
+            except Exception as e:
+                logger.warning(f"Failed to fetch MDC {mdc}: {e}")
+        
+        if not all_entries:
+            # API에서 데이터를 가져오지 못한 경우, 로컬 참조 데이터 사용
+            logger.info("No data from API, using local reference data...")
+            from services.kdrg_reference_data import KDRG_REFERENCE_DATA
+            
+            for kdrg_code, info in KDRG_REFERENCE_DATA.items():
+                all_entries.append({
+                    'kdrg_code': info.kdrg_code,
+                    'kdrg_name': info.name,
+                    'aadrg_code': info.aadrg_code,
+                    'aadrg_name': '',
+                    'mdc_code': info.mdc,
+                    'mdc_name': '',
+                    'cc_level': str(info.severity),
+                    'relative_weight': info.relative_weight,
+                    'geometric_mean_los': 0,
+                    'arithmetic_mean_los': 0,
+                    'low_trim': info.los_lower,
+                    'high_trim': info.los_upper,
+                    'version': f'{version}-LOCAL'
+                })
+        
+        # DB에 저장
+        saved_count = codebook_service.save_codebook_entries(all_entries)
+        codebook_service.update_sync_metadata(
+            sync_type='kdrg_codebook',
+            total_records=saved_count,
+            status='success',
+            message=f'{saved_count}개 KDRG 코드 동기화 완료'
+        )
+        
+        logger.info(f"KDRG codebook sync completed: {saved_count} entries saved")
+        
+        return {
+            "success": True,
+            "message": f"KDRG 코드북 동기화 완료: {saved_count}개 코드가 저장되었습니다.",
+            "synced_count": saved_count,
+            "codebook_status": codebook_service.get_sync_status()
+        }
+        
+    except Exception as e:
+        logger.error(f"KDRG codebook sync failed: {e}")
+        codebook_service.update_sync_metadata(
+            sync_type='kdrg_codebook',
+            total_records=0,
+            status='error',
+            message=str(e)
+        )
+        return {
+            "success": False,
+            "message": f"동기화 실패: {str(e)}"
+        }
 
 
 @router.get("/kdrg")
